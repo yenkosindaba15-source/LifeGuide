@@ -8,11 +8,59 @@ import {
     TouchableOpacity,
 } from "react-native";
 
-import {
-    dailyDevotionals,
-} from "../data/dailyContent";
+import { dailyDevotionals } from "../data/dailyContent";
 
 export default function DevotionalHistory() {
+  const buildHistory = () => {
+    const today = new Date();
+
+    const startOfYear = new Date(
+      today.getFullYear(),
+      0,
+      1
+    );
+
+    const history = [];
+
+    let currentDate = new Date(today);
+
+    while (currentDate >= startOfYear) {
+      const dayNumber = Math.floor(
+        (
+          currentDate.getTime() -
+          startOfYear.getTime()
+        ) /
+          (1000 * 60 * 60 * 24)
+      );
+
+      const devotional =
+        dailyDevotionals[
+          dayNumber %
+            dailyDevotionals.length
+        ];
+
+      history.push({
+        date: currentDate.toLocaleDateString(
+          "en-GB",
+          {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+          }
+        ),
+        devotional,
+      });
+
+      currentDate.setDate(
+        currentDate.getDate() - 1
+      );
+    }
+
+    return history;
+  };
+
+  const history = buildHistory();
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView
@@ -22,8 +70,8 @@ export default function DevotionalHistory() {
           Devotional History
         </Text>
 
-        {dailyDevotionals.map(
-          (devotional, index) => (
+        {history.map(
+          (item, index) => (
             <TouchableOpacity
               key={index}
               style={styles.card}
@@ -32,17 +80,29 @@ export default function DevotionalHistory() {
                   pathname:
                     "/devotional-details",
                   params: {
-                    index: String(index),
+                    index: String(
+                      dailyDevotionals.findIndex(
+                        (devotional) =>
+                          devotional.title ===
+                          item.devotional.title
+                      )
+                    ),
                   },
                 })
               }
             >
+              <Text style={styles.date}>
+                {item.date}
+              </Text>
+
               <Text style={styles.cardTitle}>
-                {devotional.title}
+                {item.devotional.title}
               </Text>
 
               <Text style={styles.reference}>
-                {devotional.reference}
+                {
+                  item.devotional.reference
+                }
               </Text>
             </TouchableOpacity>
           )
@@ -75,6 +135,13 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
 
+  date: {
+    fontSize: 14,
+    color: "#6e473b",
+    fontWeight: "bold",
+    marginBottom: 10,
+  },
+
   cardTitle: {
     fontSize: 20,
     fontWeight: "bold",
@@ -87,3 +154,4 @@ const styles = StyleSheet.create({
     color: "#6e473b",
   },
 });
+``
