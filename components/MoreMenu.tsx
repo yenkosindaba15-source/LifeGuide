@@ -1,5 +1,10 @@
 import { router } from "expo-router";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 type MoreMenuProps = {
   visible: boolean;
@@ -17,30 +22,65 @@ export default function MoreMenu({
   return (
     <View style={styles.wrapper}>
       <View style={styles.menu}>
-
-        <TouchableOpacity style={styles.item} onPress={() => router.push("/profile")}>
-          <Text>Profile</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.item} onPress={() => router.push("/highlights")}>
-          <Text style={styles.text}>My Highlights</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.item} onPress={onClose}>
-          <Text style={styles.text}>Verse of the Day</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.item} onPress={onClose}>
-          <Text style={styles.text}>Devotions</Text>
+        <TouchableOpacity
+          style={styles.item}
+          onPress={() => {
+            onClose();
+            router.push("/profile");
+          }}
+        >
+          <Text style={styles.text}>
+            Profile
+          </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.item, styles.logoutItem]}
-          onPress={onClose}
+          style={styles.item}
+          onPress={() => {
+            onClose();
+            router.push("/highlights");
+          }}
         >
-          <Text style={styles.logoutText}>LOG OUT</Text>
+          <Text style={styles.text}>
+            My Highlights
+          </Text>
         </TouchableOpacity>
 
+        <TouchableOpacity
+          style={styles.item}
+          onPress={() => {
+            onClose();
+            router.push("/verse-history");
+          }}
+        >
+          <Text style={styles.text}>
+            Verse of the Day
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.item}
+          onPress={() => {
+            onClose();
+            router.push("/devotional-history");
+          }}
+        >
+          <Text style={styles.text}>
+            Devotions
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[
+            styles.item,
+            styles.logoutItem,
+          ]}
+          onPress={onClose}
+        >
+          <Text style={styles.logoutText}>
+            LOG OUT
+          </Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
