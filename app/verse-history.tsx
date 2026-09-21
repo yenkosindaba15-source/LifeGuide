@@ -5,14 +5,62 @@ import {
     ScrollView,
     StyleSheet,
     Text,
-    TouchableOpacity
+    TouchableOpacity,
 } from "react-native";
 
-import {
-    dailyHomeContent,
-} from "../data/dailyContent";
+import { dailyHomeContent } from "../data/dailyContent";
 
 export default function VerseHistory() {
+  const buildHistory = () => {
+    const today = new Date();
+
+    const startOfYear = new Date(
+      today.getFullYear(),
+      0,
+      1
+    );
+
+    const history = [];
+
+    let currentDate = new Date(today);
+
+    while (currentDate >= startOfYear) {
+      const dayNumber = Math.floor(
+        (
+          currentDate.getTime() -
+          startOfYear.getTime()
+        ) /
+          (1000 * 60 * 60 * 24)
+      );
+
+      const content =
+        dailyHomeContent[
+          dayNumber %
+            dailyHomeContent.length
+        ];
+
+      history.push({
+        date: currentDate.toLocaleDateString(
+          "en-GB",
+          {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+          }
+        ),
+        content,
+      });
+
+      currentDate.setDate(
+        currentDate.getDate() - 1
+      );
+    }
+
+    return history;
+  };
+
+  const history = buildHistory();
+
   const openVerse = (
     reference: string
   ) => {
@@ -24,17 +72,13 @@ export default function VerseHistory() {
       return;
     }
 
-    const book = match[1];
-    const chapter = match[2];
-    const verse = match[3];
-
     router.push({
       pathname:
         "/bible/chapter/[chapter]",
       params: {
-        book,
-        chapter,
-        targetVerse: verse,
+        book: match[1],
+        chapter: match[2],
+        targetVerse: match[3],
       },
     });
   };
@@ -42,25 +86,31 @@ export default function VerseHistory() {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView
-        showsVerticalScrollIndicator={false}
+        showsVerticalScrollIndicator={
+          false
+        }
       >
         <Text style={styles.title}>
           Verse History
         </Text>
 
-        {dailyHomeContent.map(
+        {history.map(
           (item, index) => (
             <TouchableOpacity
               key={index}
               style={styles.card}
               onPress={() =>
                 openVerse(
-                  item.reference
+                  item.content.reference
                 )
               }
             >
+              <Text style={styles.date}>
+                {item.date}
+              </Text>
+
               <Text style={styles.verse}>
-                "{item.verse}"
+                "{item.content.verse}"
               </Text>
 
               <Text
@@ -68,7 +118,10 @@ export default function VerseHistory() {
                   styles.reference
                 }
               >
-                {item.reference}
+                {
+                  item.content
+                    .reference
+                }
               </Text>
             </TouchableOpacity>
           )
@@ -101,12 +154,19 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
 
+  date: {
+    fontSize: 14,
+    color: "#6e473b",
+    fontWeight: "bold",
+    marginBottom: 10,
+  },
+
   verse: {
     fontSize: 18,
     fontStyle: "italic",
     color: "#291c0e",
-    marginBottom: 12,
     lineHeight: 28,
+    marginBottom: 12,
   },
 
   reference: {
