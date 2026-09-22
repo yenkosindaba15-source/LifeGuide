@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useMemo, useState } from "react";
 
@@ -102,7 +103,7 @@ export default function Bible() {
           <TextInput
             style={styles.searchInput}
             placeholder="Search Bible book..."
-            placeholderTextColor="#8c7665"
+            placeholderTextColor="#a78d78"
             value={searchText}
             onChangeText={setSearchText}
             autoCapitalize="none"
@@ -110,17 +111,16 @@ export default function Bible() {
             returnKeyType="search"
           />
 
-          {searchText.length > 0 && (
+          {searchText.length > 0 ? (
             <TouchableOpacity
-              style={styles.clearButton}
-              onPress={() =>
-                setSearchText("")
-              }
+              onPress={() => setSearchText("")}
             >
               <Text style={styles.clearText}>
                 ×
               </Text>
             </TouchableOpacity>
+          ):(
+            <Ionicons name="search" size={22} color="#6e473b" />
           )}
         </View>
 
@@ -269,32 +269,19 @@ const styles = StyleSheet.create({
   },
 
   searchContainer: {
-    height: 55,
-
+    marginBottom: 35,
     backgroundColor: "#f8f4ef",
-
     borderWidth: 2,
-
     borderColor: "#beb5a9",
-
-    borderRadius: 16,
-
+    borderRadius: 25,
     flexDirection: "row",
-
     alignItems: "center",
-
-    paddingLeft: 15,
-
-    paddingRight: 8,
-
-    marginBottom: 20,
+    paddingHorizontal: 15,
   },
 
   searchInput: {
     flex: 1,
-
-    fontSize: 17,
-
+    fontSize: 16,
     color: "#291c0e",
   },
 
@@ -308,7 +295,7 @@ const styles = StyleSheet.create({
   },
 
   clearText: {
-    fontSize: 30,
+    fontSize: 26,
     color: "#6e473b",
   },
 
