@@ -88,7 +88,7 @@ export default function Profile() {
           </View>
 
           <Text style={styles.name}>
-            {profile.firstName}{profile.lastName}
+            {profile.firstName} {profile.lastName}
           </Text>
 
           <Text style={styles.email}>
@@ -109,8 +109,7 @@ export default function Profile() {
               </Text>
 
               <Text style={styles.value}>
-                {profile.firstName}{""}
-                {profile.lastName}
+                {profile.firstName} {profile.lastName}
               </Text>
             </View>
 
@@ -134,7 +133,8 @@ export default function Profile() {
             SETTINGS
           </Text>
 
-          <TouchableOpacity style={styles.option}>
+          <TouchableOpacity style={styles.option}
+          onPress={() => router.push("/edit-profile")}>
             <Text style={styles.optionText}>
               Edit Profile
             </Text>
