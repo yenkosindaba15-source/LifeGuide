@@ -1,8 +1,11 @@
 import { router } from "expo-router";
+import { useMemo, useState } from "react";
+
 import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -13,66 +16,305 @@ import {
 } from "../../src/data/bibleBooks";
 
 export default function Bible() {
-  return (
-    <ScrollView
-      style={styles.container}
-      showsVerticalScrollIndicator={false}
+  const [searchText, setSearchText] =
+    useState("");
+
+  const normalizedSearch =
+    searchText.trim().toLowerCase();
+
+  const filteredOldTestament = useMemo(() => {
+    if (!normalizedSearch) {
+      return OLD_TESTAMENT;
+    }
+
+    return OLD_TESTAMENT.filter((book) =>
+      book
+        .toLowerCase()
+        .includes(normalizedSearch)
+    );
+  }, [normalizedSearch]);
+
+  const filteredNewTestament = useMemo(() => {
+    if (!normalizedSearch) {
+      return NEW_TESTAMENT;
+    }
+
+    return NEW_TESTAMENT.filter((book) =>
+      book
+        .toLowerCase()
+        .includes(normalizedSearch)
+    );
+  }, [normalizedSearch]);
+
+  const hasResults =
+    filteredOldTestament.length > 0 ||
+    filteredNewTestament.length > 0;
+
+  const openBook = (book: string) => {
+    router.push({
+      pathname: "/bible/[book]",
+      params: { book },
+    });
+  };
+
+  const renderBook = (book: string) => (
+    <TouchableOpacity
+      key={book}
+      style={styles.bookCard}
+      onPress={() => openBook(book)}
     >
-      <Text style={styles.title}>Holy Bible</Text>
+      <Text style={styles.bookText}>
+        {book}
+      </Text>
+    </TouchableOpacity>
+  );
 
-      <Text style={styles.sectionTitle}>OLD TESTAMENT</Text>
+  return (
+    <View style={styles.screen}>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        {/* Header */}
 
-      {OLD_TESTAMENT.map((book) => (
-        <TouchableOpacity
-          key={book}
-          style={styles.bookCard}
-          onPress={() =>
-            router.push({
-              pathname: "/bible/[book]",
-              params: { book },
-            })
-          }
-        >
-          <Text style={styles.bookText}>{book}</Text>
-        </TouchableOpacity>
-      ))}
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => router.back()}
+          >
+            <Text style={styles.backText}>
+              ‹
+            </Text>
+          </TouchableOpacity>
 
-      <Text style={styles.sectionTitle}>NEW TESTAMENT</Text>
+          <Text style={styles.title}>
+            Holy Bible
+          </Text>
 
-      {NEW_TESTAMENT.map((book) => (
-        <TouchableOpacity
-          key={book}
-          style={styles.bookCard}
-          onPress={() =>
-            router.push({
-              pathname: "/bible/[book]",
-              params: { book },
-            })
-          }
-        >
-          <Text style={styles.bookText}>{book}</Text>
-        </TouchableOpacity>
-      ))}
+          <View style={styles.headerSpace} />
+        </View>
 
-      <View style={{ height: 100 }} />
-    </ScrollView>
+        {/* Search */}
+
+        <View style={styles.searchContainer}>
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search Bible book..."
+            placeholderTextColor="#8c7665"
+            value={searchText}
+            onChangeText={setSearchText}
+            autoCapitalize="none"
+            autoCorrect={false}
+            returnKeyType="search"
+          />
+
+          {searchText.length > 0 && (
+            <TouchableOpacity
+              style={styles.clearButton}
+              onPress={() =>
+                setSearchText("")
+              }
+            >
+              <Text style={styles.clearText}>
+                ×
+              </Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {normalizedSearch ? (
+          <>
+            <Text style={styles.resultsText}>
+              Results for "
+              {searchText.trim()}
+              "
+            </Text>
+
+            {!hasResults ? (
+              <View style={styles.emptyCard}>
+                <Text style={styles.emptyTitle}>
+                  No Bible book found
+                </Text>
+
+                <Text style={styles.emptyText}>
+                  Try searching for
+                  "John", "Isa", or
+                  "Sam".
+                </Text>
+              </View>
+            ) : (
+              <>
+                {filteredOldTestament.length >
+                  0 && (
+                  <>
+                    <Text
+                      style={
+                        styles.sectionTitle
+                      }
+                    >
+                      OLD TESTAMENT
+                    </Text>
+
+                    {filteredOldTestament.map(
+                      renderBook
+                    )}
+                  </>
+                )}
+
+                {filteredNewTestament.length >
+                  0 && (
+                  <>
+                    <Text
+                      style={
+                        styles.sectionTitle
+                      }
+                    >
+                      NEW TESTAMENT
+                    </Text>
+
+                    {filteredNewTestament.map(
+                      renderBook
+                    )}
+                  </>
+                )}
+              </>
+            )}
+          </>
+        ) : (
+          <>
+            <Text
+              style={styles.sectionTitle}
+            >
+              OLD TESTAMENT
+            </Text>
+
+            {OLD_TESTAMENT.map(
+              renderBook
+            )}
+
+            <Text
+              style={styles.sectionTitle}
+            >
+              NEW TESTAMENT
+            </Text>
+
+            {NEW_TESTAMENT.map(
+              renderBook
+            )}
+          </>
+        )}
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  screen: {
     flex: 1,
     backgroundColor: "#e1d4c2",
+  },
+
+  container: {
+    flex: 1,
     paddingHorizontal: 20,
   },
 
+  content: {
+    paddingBottom: 120,
+  },
+
+  header: {
+    minHeight: 100,
+    paddingTop: 35,
+
+    flexDirection: "row",
+
+    alignItems: "center",
+
+    justifyContent:
+      "space-between",
+  },
+
+  backButton: {
+    width: 45,
+    height: 45,
+
+    justifyContent: "center",
+
+    alignItems: "center",
+  },
+
+  backText: {
+    fontSize: 55,
+    color: "#6e473b",
+    lineHeight: 45,
+  },
+
   title: {
-    fontSize: 34,
-    fontWeight: "bold",
-    color: "#291c0e",
+    flex: 1,
+
     textAlign: "center",
-    marginTop: 60,
-    marginBottom: 30,
+
+    fontSize: 34,
+
+    fontWeight: "bold",
+
+    color: "#291c0e",
+  },
+
+  headerSpace: {
+    width: 45,
+  },
+
+  searchContainer: {
+    height: 55,
+
+    backgroundColor: "#f8f4ef",
+
+    borderWidth: 2,
+
+    borderColor: "#beb5a9",
+
+    borderRadius: 16,
+
+    flexDirection: "row",
+
+    alignItems: "center",
+
+    paddingLeft: 15,
+
+    paddingRight: 8,
+
+    marginBottom: 20,
+  },
+
+  searchInput: {
+    flex: 1,
+
+    fontSize: 17,
+
+    color: "#291c0e",
+  },
+
+  clearButton: {
+    width: 40,
+    height: 40,
+
+    justifyContent: "center",
+
+    alignItems: "center",
+  },
+
+  clearText: {
+    fontSize: 30,
+    color: "#6e473b",
+  },
+
+  resultsText: {
+    color: "#6e473b",
+    marginBottom: 15,
   },
 
   sectionTitle: {
@@ -95,5 +337,24 @@ const styles = StyleSheet.create({
   bookText: {
     fontSize: 18,
     color: "#291c0e",
+  },
+
+  emptyCard: {
+    backgroundColor: "#f8f4ef",
+    borderRadius: 16,
+    padding: 25,
+    alignItems: "center",
+  },
+
+  emptyTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#291c0e",
+    marginBottom: 10,
+  },
+
+  emptyText: {
+    color: "#6e473b",
+    textAlign: "center",
   },
 });

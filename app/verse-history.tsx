@@ -1,11 +1,12 @@
 import { router } from "expo-router";
 
 import {
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 import { dailyHomeContent } from "../data/dailyContent";
@@ -86,46 +87,54 @@ export default function VerseHistory() {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView
-        showsVerticalScrollIndicator={
-          false
-        }
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.content}
       >
-        <Text style={styles.title}>
-          Verse History
-        </Text>
+        {/* Header */}
 
-        {history.map(
-          (item, index) => (
-            <TouchableOpacity
-              key={index}
-              style={styles.card}
-              onPress={() =>
-                openVerse(
-                  item.content.reference
-                )
-              }
-            >
-              <Text style={styles.date}>
-                {item.date}
-              </Text>
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => router.back()}
+          >
+            <Text style={styles.backText}>
+              ‹
+            </Text>
+          </TouchableOpacity>
 
-              <Text style={styles.verse}>
-                "{item.content.verse}"
-              </Text>
+          <Text style={styles.title}>
+            Verse History
+          </Text>
 
-              <Text
-                style={
-                  styles.reference
-                }
-              >
-                {
-                  item.content
-                    .reference
-                }
-              </Text>
-            </TouchableOpacity>
-          )
-        )}
+          <View style={styles.headerSpace} />
+        </View>
+
+        {/* Verse History */}
+
+        {history.map((item, index) => (
+          <TouchableOpacity
+            key={`${item.date}-${index}`}
+            style={styles.card}
+            activeOpacity={0.75}
+            onPress={() =>
+              openVerse(
+                item.content.reference
+              )
+            }
+          >
+            <Text style={styles.date}>
+              {item.date}
+            </Text>
+
+            <Text style={styles.verse}>
+              “{item.content.verse}”
+            </Text>
+
+            <Text style={styles.reference}>
+              {item.content.reference}
+            </Text>
+          </TouchableOpacity>
+        ))}
       </ScrollView>
     </SafeAreaView>
   );
@@ -135,16 +144,44 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#e1d4c2",
-    padding: 20,
+  },
+
+  content: {
+    paddingHorizontal: 20,
+    paddingBottom: 60,
+  },
+
+  header: {
+    minHeight: 105,
+    paddingTop: 35,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+
+  backButton: {
+    width: 45,
+    height: 50,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  backText: {
+    fontSize: 55,
+    color: "#6e473b",
+    lineHeight: 45,
   },
 
   title: {
-    fontSize: 32,
+    flex: 1,
+    fontSize: 30,
     fontWeight: "bold",
     color: "#291c0e",
     textAlign: "center",
-    marginTop: 50,
-    marginBottom: 25,
+  },
+
+  headerSpace: {
+    width: 45,
   },
 
   card: {
