@@ -1,11 +1,11 @@
 import { router } from "expo-router";
 
 import {
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
 } from "react-native";
 
 import { dailyDevotionals } from "../data/dailyContent";
@@ -154,4 +154,3 @@ const styles = StyleSheet.create({
     color: "#6e473b",
   },
 });
-``
