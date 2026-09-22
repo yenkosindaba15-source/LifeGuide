@@ -26,7 +26,12 @@ export default function Bible() {
         <TouchableOpacity
           key={book}
           style={styles.bookCard}
-          onPress={() => console.log(book)}
+          onPress={() =>
+            router.push({
+              pathname: "/bible/[book]",
+              params: { book },
+            })
+          }
         >
           <Text style={styles.bookText}>{book}</Text>
         </TouchableOpacity>
