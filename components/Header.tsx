@@ -1,3 +1,4 @@
+import { router } from "expo-router";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 type HeaderProps = {
@@ -27,7 +28,8 @@ export default function Header({ title }: HeaderProps) {
         {headerTitle}
       </Text>
 
-      <TouchableOpacity style={styles.logoButton}>
+      <TouchableOpacity style={styles.logoButton}
+      onPress={() => router.push("/profile")}>
         <Image
           source={require("../assets/images/YHWH-post-e1655321856590.png")}
           style={styles.logo}
