@@ -79,23 +79,9 @@ export default function Bible() {
         keyboardShouldPersistTaps="handled"
       >
         {/* Header */}
-
-        <View style={styles.header}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => router.back()}
-          >
-            <Text style={styles.backText}>
-              ‹
-            </Text>
-          </TouchableOpacity>
-
           <Text style={styles.title}>
             Holy Bible
           </Text>
-
-          <View style={styles.headerSpace} />
-        </View>
 
         {/* Search */}
 
@@ -225,47 +211,13 @@ const styles = StyleSheet.create({
     paddingBottom: 120,
   },
 
-  header: {
-    minHeight: 100,
-    paddingTop: 35,
-
-    flexDirection: "row",
-
-    alignItems: "center",
-
-    justifyContent:
-      "space-between",
-  },
-
-  backButton: {
-    width: 45,
-    height: 45,
-
-    justifyContent: "center",
-
-    alignItems: "center",
-  },
-
-  backText: {
-    fontSize: 55,
-    color: "#6e473b",
-    lineHeight: 45,
-  },
-
   title: {
-    flex: 1,
-
-    textAlign: "center",
-
     fontSize: 34,
-
     fontWeight: "bold",
-
     color: "#291c0e",
-  },
-
-  headerSpace: {
-    width: 45,
+    textAlign: "center",
+    marginTop: 60,
+    marginBottom: 30,
   },
 
   searchContainer: {

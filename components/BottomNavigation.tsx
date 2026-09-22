@@ -40,17 +40,17 @@ export default function BottomNavigation() {
         <NavButton
           icon="robot"
           text="AI Chat"
-          active={pathname === "/(tabs)/ai"}
+          active={pathname.startsWith("/ai")}
           onPress={() => {
             setMoreVisible(false);
-            router.replace("/(tabs)/ai");
+            router.replace("/ai");
           }}
         />
 
         <NavButton
           icon="book-bible"
           text="Bible"
-          active={pathname === "/(tabs)/bible"}
+          active={pathname.startsWith("/(tabs)/bible") || pathname.startsWith("/bible")}
           onPress={() => {
             setMoreVisible(false);
             router.replace("/(tabs)/bible");
@@ -60,7 +60,7 @@ export default function BottomNavigation() {
         <NavButton
           icon="book-open"
           text="Devotionals"
-          active={pathname === "/(tabs)/devotionals"}
+          active={pathname.startsWith("/(tabs)/devotionals") || pathname.startsWith("/devotional")}
           onPress={() => {
             setMoreVisible(false);
             router.replace("/(tabs)/devotionals");
@@ -70,7 +70,14 @@ export default function BottomNavigation() {
         <NavButton
           icon="bars"
           text="More"
-          active={moreVisible}
+          active={
+            moreVisible || pathname === "/profile" || 
+            pathname === "/highlights" || 
+            pathname === "/verse-history" ||
+            pathname === "/devotional-history" ||
+            pathname === "/edit-profile" ||
+            pathname === "/change-password"
+          }
           onPress={toggleMore}
         />
 
