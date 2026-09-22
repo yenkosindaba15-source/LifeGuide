@@ -144,7 +144,8 @@ export default function Profile() {
             </Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.option}>
+          <TouchableOpacity style={styles.option}
+          onPress={() => router.push("/change-password")}>
             <Text style={styles.optionText}>
               Change Password
             </Text>
