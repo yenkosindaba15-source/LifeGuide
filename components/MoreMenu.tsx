@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { logout } from "../src/services/authService";
 
 type MoreMenuProps = {
   visible: boolean;
@@ -18,6 +19,16 @@ export default function MoreMenu({
   if (!visible) {
     return null;
   }
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      onClose();
+      router.replace("/login");
+    } catch (error){
+      console.log(error);
+    }
+  };
 
   return (
     <View style={styles.wrapper}>
@@ -75,7 +86,7 @@ export default function MoreMenu({
             styles.item,
             styles.logoutItem,
           ]}
-          onPress={onClose}
+          onPress={handleLogout}
         >
           <Text style={styles.logoutText}>
             LOG OUT
