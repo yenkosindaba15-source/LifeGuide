@@ -74,11 +74,14 @@ For unrelated requests, respond only with:
 
 Keep normal responses compassionate, natural, clear,
 and reasonably concise.
+
+Do not provide unnecessarily long responses unless the user
+specifically asks for a detailed explanation.
 `;
 
 const MODELS = [
-  "gemini-3.8-flash",
   "gemini-3.5-flash-lite",
+  "gemini-3.8-flash",
 ];
 
 const sleep = (milliseconds) => {
@@ -154,6 +157,10 @@ const generateWithModel = async (
           Math.random() * 500
         );
 
+      console.log(
+        `Retrying ${modelName} in ${delay} ms.`
+      );
+
       await sleep(delay);
     }
   }
@@ -165,12 +172,19 @@ const generateWithModel = async (
 
 export default {
   async fetch(request) {
+    const requestStartTime =
+      Date.now();
+
     const corsHeaders = {
-      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Origin":
+        "*",
+
       "Access-Control-Allow-Methods":
         "POST, OPTIONS",
+
       "Access-Control-Allow-Headers":
         "Content-Type",
+
       "Content-Type":
         "application/json",
     };
@@ -259,6 +273,13 @@ export default {
 
       for (const modelName of MODELS) {
         try {
+          console.log(
+            `Trying ${modelName}...`
+          );
+
+          const modelStartTime =
+            Date.now();
+
           const text =
             await generateWithModel(
               ai,
@@ -266,8 +287,24 @@ export default {
               question
             );
 
+          const modelResponseTime =
+            Date.now() -
+            modelStartTime;
+
+          const totalResponseTime =
+            Date.now() -
+            requestStartTime;
+
           console.log(
             `LifeGuide response generated with ${modelName}.`
+          );
+
+          console.log(
+            `${modelName} generation time: ${modelResponseTime} ms`
+          );
+
+          console.log(
+            `LifeGuide AI total response time: ${totalResponseTime} ms`
           );
 
           return new Response(
@@ -287,7 +324,9 @@ export default {
             error
           );
 
-          if (!isRetryableError(error)) {
+          if (
+            !isRetryableError(error)
+          ) {
             break;
           }
         }
