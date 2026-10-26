@@ -1,7 +1,7 @@
 import {
-    getAI,
-    getGenerativeModel,
-    GoogleAIBackend,
+  getAI,
+  getGenerativeModel,
+  GoogleAIBackend,
 } from "firebase/ai";
 
 import app from "./firebase";
@@ -76,9 +76,9 @@ const ai = getAI(app, {
 });
 
 const model = getGenerativeModel(ai, {
-  model: "gemini-2.5-flash",
+  model: "gemini-3.8-flash",
   systemInstruction: SYSTEM_INSTRUCTION,
-});
+}, {timeout: 30000});
 
 export const askBibleCompanion = async (
   question: string
