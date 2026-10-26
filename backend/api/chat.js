@@ -76,13 +76,103 @@ Keep normal responses compassionate, natural, clear,
 and reasonably concise.
 `;
 
+const MODELS = [
+  "gemini-3.8-flash",
+  "gemini-3.5-flash-lite",
+];
+
+const sleep = (milliseconds) => {
+  return new Promise((resolve) => {
+    setTimeout(resolve, milliseconds);
+  });
+};
+
+const isRetryableError = (error) => {
+  const status = Number(
+    error?.status ?? 0
+  );
+
+  return (
+    status === 408 ||
+    status === 429 ||
+    status >= 500
+  );
+};
+
+const generateWithModel = async (
+  ai,
+  modelName,
+  question
+) => {
+  const maxAttempts = 3;
+
+  for (
+    let attempt = 1;
+    attempt <= maxAttempts;
+    attempt++
+  ) {
+    try {
+      const response =
+        await ai.models.generateContent({
+          model: modelName,
+
+          contents: question,
+
+          config: {
+            systemInstruction:
+              SYSTEM_INSTRUCTION,
+          },
+        });
+
+      const text =
+        response.text?.trim();
+
+      if (!text) {
+        throw new Error(
+          "The model returned an empty response."
+        );
+      }
+
+      return text;
+    } catch (error) {
+      console.error(
+        `${modelName} attempt ${attempt} failed:`,
+        error
+      );
+
+      if (
+        !isRetryableError(error) ||
+        attempt === maxAttempts
+      ) {
+        throw error;
+      }
+
+      const delay =
+        Math.pow(2, attempt - 1) *
+          1000 +
+        Math.floor(
+          Math.random() * 500
+        );
+
+      await sleep(delay);
+    }
+  }
+
+  throw new Error(
+    "Unable to generate AI response."
+  );
+};
+
 export default {
   async fetch(request) {
     const corsHeaders = {
       "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "POST, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type",
-      "Content-Type": "application/json",
+      "Access-Control-Allow-Methods":
+        "POST, OPTIONS",
+      "Access-Control-Allow-Headers":
+        "Content-Type",
+      "Content-Type":
+        "application/json",
     };
 
     if (request.method === "OPTIONS") {
@@ -95,7 +185,8 @@ export default {
     if (request.method !== "POST") {
       return new Response(
         JSON.stringify({
-          error: "Method not allowed.",
+          error:
+            "Method not allowed.",
         }),
         {
           status: 405,
@@ -105,17 +196,20 @@ export default {
     }
 
     try {
-      const body = await request.json();
+      const body =
+        await request.json();
 
       const question =
-        typeof body?.question === "string"
+        typeof body?.question ===
+        "string"
           ? body.question.trim()
           : "";
 
       if (!question) {
         return new Response(
           JSON.stringify({
-            error: "A question is required.",
+            error:
+              "A question is required.",
           }),
           {
             status: 400,
@@ -127,7 +221,8 @@ export default {
       if (question.length > 1000) {
         return new Response(
           JSON.stringify({
-            error: "The question is too long.",
+            error:
+              "The question is too long.",
           }),
           {
             status: 400,
@@ -160,38 +255,56 @@ export default {
         apiKey,
       });
 
-      const response =
-        await ai.models.generateContent({
-          model: "gemini-3.8-flash",
-          contents: question,
-          config: {
-            systemInstruction:
-              SYSTEM_INSTRUCTION,
-          },
-        });
+      let finalError = null;
 
-      const text =
-        response.text?.trim();
+      for (const modelName of MODELS) {
+        try {
+          const text =
+            await generateWithModel(
+              ai,
+              modelName,
+              question
+            );
 
-      if (!text) {
-        return new Response(
-          JSON.stringify({
-            error:
-              "The AI Bible Companion did not return a response.",
-          }),
-          {
-            status: 502,
-            headers: corsHeaders,
+          console.log(
+            `LifeGuide response generated with ${modelName}.`
+          );
+
+          return new Response(
+            JSON.stringify({
+              response: text,
+            }),
+            {
+              status: 200,
+              headers: corsHeaders,
+            }
+          );
+        } catch (error) {
+          finalError = error;
+
+          console.error(
+            `${modelName} unavailable:`,
+            error
+          );
+
+          if (!isRetryableError(error)) {
+            break;
           }
-        );
+        }
       }
+
+      console.error(
+        "All LifeGuide AI models failed:",
+        finalError
+      );
 
       return new Response(
         JSON.stringify({
-          response: text,
+          error:
+            "The AI Bible Companion is temporarily unavailable. Please try again.",
         }),
         {
-          status: 200,
+          status: 503,
           headers: corsHeaders,
         }
       );
