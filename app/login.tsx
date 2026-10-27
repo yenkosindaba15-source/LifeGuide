@@ -1,9 +1,9 @@
-import { useState } from "react";
-import { Alert } from "react-native";
-import { login } from "../src/services/authService";
-
+import { Ionicons } from "@expo/vector-icons";
 import { Link, router } from "expo-router";
+import { useState } from "react";
+
 import {
+  Alert,
   StyleSheet,
   Text,
   TextInput,
@@ -11,30 +11,47 @@ import {
   View,
 } from "react-native";
 
+import { login } from "../src/services/authService";
+
 export default function Login() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-const handleLogin = async () => {
-  try {
-    await login(email, password);
+  const [email, setEmail] =
+    useState("");
 
-    Alert.alert("Success","Logged in successfully!");
+  const [password, setPassword] =
+    useState("");
 
-    router.replace("/(tabs)");
-  } catch (error: any) {
-    Alert.alert("Login Failed",error.message);
-  }
-};
+  const [showPassword, setShowPassword] =
+    useState(false);
+
+  const handleLogin = async () => {
+    try {
+      await login(email, password);
+
+      Alert.alert(
+        "Success",
+        "Logged in successfully!"
+      );
+
+      router.replace("/(tabs)");
+    } catch (error: any) {
+      Alert.alert(
+        "Login Failed",
+        error.message
+      );
+    }
+  };
 
   return (
     <View style={styles.container}>
-
-      {/* Verse Section */}
       <View style={styles.side}>
-        <Text style={styles.heading}>Welcome Back.</Text>
+        <Text style={styles.heading}>
+          Welcome Back.
+        </Text>
 
         <Text style={styles.verse}>
-          "In the beginning was the Word, and the Word was with God, and the Word was God."
+          "In the beginning was the Word,
+          and the Word was with God, and
+          the Word was God."
         </Text>
 
         <Text style={styles.reference}>
@@ -42,13 +59,15 @@ const handleLogin = async () => {
         </Text>
       </View>
 
-      {/* Login Card */}
       <View style={styles.wrapper}>
-
-        <Text style={styles.title}>Login</Text>
+        <Text style={styles.title}>
+          Login
+        </Text>
 
         <View style={styles.inputBox}>
-          <Text style={styles.label}>Email</Text>
+          <Text style={styles.label}>
+            Email
+          </Text>
 
           <TextInput
             placeholder="you@email.com"
@@ -62,23 +81,52 @@ const handleLogin = async () => {
         </View>
 
         <View style={styles.inputBox}>
-          <Text style={styles.label}>Password</Text>
+          <Text style={styles.label}>
+            Password
+          </Text>
 
-          <TextInput
-            secureTextEntry
-            placeholder="Password"
-            placeholderTextColor="#cccccc"
-            style={styles.input}
-            value={password}
-            onChangeText={setPassword}
-          />
+          <View
+            style={styles.passwordContainer}
+          >
+            <TextInput
+              placeholder="Password"
+              placeholderTextColor="#cccccc"
+              style={styles.passwordInput}
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry={
+                !showPassword
+              }
+            />
+
+            <TouchableOpacity
+              style={styles.eyeButton}
+              onPress={() =>
+                setShowPassword(
+                  (current) => !current
+                )
+              }
+            >
+              <Ionicons
+                name={
+                  showPassword
+                    ? "eye-off-outline"
+                    : "eye-outline"
+                }
+                size={23}
+                color="#e1d4c2"
+              />
+            </TouchableOpacity>
+          </View>
         </View>
 
         <TouchableOpacity
           style={styles.button}
           onPress={handleLogin}
         >
-          <Text style={styles.buttonText}>Login</Text>
+          <Text style={styles.buttonText}>
+            Login
+          </Text>
         </TouchableOpacity>
 
         <View style={styles.bottomRow}>
@@ -86,13 +134,14 @@ const handleLogin = async () => {
             Don't have an account?{" "}
           </Text>
 
-          <Link href="/signup" style={styles.link}>
+          <Link
+            href="/signup"
+            style={styles.link}
+          >
             Create one
           </Link>
         </View>
-
       </View>
-
     </View>
   );
 }
@@ -131,7 +180,8 @@ const styles = StyleSheet.create({
   },
 
   wrapper: {
-    backgroundColor: "rgba(255,255,255,0.08)",
+    backgroundColor:
+      "rgba(255,255,255,0.08)",
     padding: 25,
     borderRadius: 20,
   },
@@ -157,9 +207,34 @@ const styles = StyleSheet.create({
   input: {
     height: 50,
     borderRadius: 12,
-    backgroundColor: "rgba(255,255,255,0.12)",
+    backgroundColor:
+      "rgba(255,255,255,0.12)",
     paddingHorizontal: 15,
     color: "white",
+  },
+
+  passwordContainer: {
+    height: 50,
+    borderRadius: 12,
+    backgroundColor:
+      "rgba(255,255,255,0.12)",
+    flexDirection: "row",
+    alignItems: "center",
+  },
+
+  passwordInput: {
+    flex: 1,
+    height: "100%",
+    paddingLeft: 15,
+    paddingRight: 5,
+    color: "white",
+  },
+
+  eyeButton: {
+    width: 50,
+    height: 50,
+    justifyContent: "center",
+    alignItems: "center",
   },
 
   button: {

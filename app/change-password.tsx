@@ -1,93 +1,124 @@
+import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
+
+import {
+  EmailAuthProvider,
+  reauthenticateWithCredential,
+  updatePassword,
+} from "firebase/auth";
+
 import { useState } from "react";
 
 import {
-    Alert,
-    SafeAreaView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
+  Alert,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
-
-import {
-    EmailAuthProvider,
-    reauthenticateWithCredential,
-    updatePassword,
-} from "firebase/auth";
 
 import { auth } from "../src/services/firebase";
 
 export default function ChangePassword() {
-  const [currentPassword, setCurrentPassword] =
-    useState("");
+  const [
+    currentPassword,
+    setCurrentPassword,
+  ] = useState("");
 
-  const [newPassword, setNewPassword] =
-    useState("");
+  const [
+    newPassword,
+    setNewPassword,
+  ] = useState("");
 
-  const [confirmPassword, setConfirmPassword] =
-    useState("");
+  const [
+    confirmPassword,
+    setConfirmPassword,
+  ] = useState("");
 
-  const handleChangePassword = async () => {
-    try {
-      const user = auth.currentUser;
+  const [
+    showCurrentPassword,
+    setShowCurrentPassword,
+  ] = useState(false);
 
-      if (!user || !user.email) {
+  const [
+    showNewPassword,
+    setShowNewPassword,
+  ] = useState(false);
+
+  const [
+    showConfirmPassword,
+    setShowConfirmPassword,
+  ] = useState(false);
+
+  const handleChangePassword =
+    async () => {
+      try {
+        const user =
+          auth.currentUser;
+
+        if (!user || !user.email) {
+          Alert.alert(
+            "Error",
+            "User not found."
+          );
+
+          return;
+        }
+
+        if (
+          newPassword !==
+          confirmPassword
+        ) {
+          Alert.alert(
+            "Password Mismatch",
+            "New passwords do not match."
+          );
+
+          return;
+        }
+
+        if (newPassword.length < 6) {
+          Alert.alert(
+            "Weak Password",
+            "Password must be at least 6 characters."
+          );
+
+          return;
+        }
+
+        const credential =
+          EmailAuthProvider.credential(
+            user.email,
+            currentPassword
+          );
+
+        await reauthenticateWithCredential(
+          user,
+          credential
+        );
+
+        await updatePassword(
+          user,
+          newPassword
+        );
+
+        Alert.alert(
+          "Success",
+          "Password changed successfully."
+        );
+
+        router.back();
+      } catch (error) {
+        console.log(error);
+
         Alert.alert(
           "Error",
-          "User not found."
+          "Unable to change password. Check your current password."
         );
-        return;
       }
-
-      if (newPassword !== confirmPassword) {
-        Alert.alert(
-          "Password Mismatch",
-          "New passwords do not match."
-        );
-        return;
-      }
-
-      if (newPassword.length < 6) {
-        Alert.alert(
-          "Weak Password",
-          "Password must be at least 6 characters."
-        );
-        return;
-      }
-
-      const credential =
-        EmailAuthProvider.credential(
-          user.email,
-          currentPassword
-        );
-
-      await reauthenticateWithCredential(
-        user,
-        credential
-      );
-
-      await updatePassword(
-        user,
-        newPassword
-      );
-
-      Alert.alert(
-        "Success",
-        "Password changed successfully."
-      );
-
-      router.back();
-
-    } catch (error) {
-      console.log(error);
-
-      Alert.alert(
-        "Error",
-        "Unable to change password. Check your current password."
-      );
-    }
-  };
+    };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -95,33 +126,111 @@ export default function ChangePassword() {
         Change Password
       </Text>
 
-      <TextInput
-        style={styles.input}
-        placeholder="Current Password"
-        secureTextEntry
-        value={currentPassword}
-        onChangeText={
-          setCurrentPassword
-        }
-      />
+      <View
+        style={styles.passwordContainer}
+      >
+        <TextInput
+          style={styles.passwordInput}
+          placeholder="Current Password"
+          placeholderTextColor="#8c7665"
+          secureTextEntry={
+            !showCurrentPassword
+          }
+          value={currentPassword}
+          onChangeText={
+            setCurrentPassword
+          }
+        />
 
-      <TextInput
-        style={styles.input}
-        placeholder="New Password"
-        secureTextEntry
-        value={newPassword}
-        onChangeText={setNewPassword}
-      />
+        <TouchableOpacity
+          style={styles.eyeButton}
+          onPress={() =>
+            setShowCurrentPassword(
+              (current) => !current
+            )
+          }
+        >
+          <Ionicons
+            name={
+              showCurrentPassword
+                ? "eye-off-outline"
+                : "eye-outline"
+            }
+            size={23}
+            color="#6e473b"
+          />
+        </TouchableOpacity>
+      </View>
 
-      <TextInput
-        style={styles.input}
-        placeholder="Confirm Password"
-        secureTextEntry
-        value={confirmPassword}
-        onChangeText={
-          setConfirmPassword
-        }
-      />
+      <View
+        style={styles.passwordContainer}
+      >
+        <TextInput
+          style={styles.passwordInput}
+          placeholder="New Password"
+          placeholderTextColor="#8c7665"
+          secureTextEntry={
+            !showNewPassword
+          }
+          value={newPassword}
+          onChangeText={setNewPassword}
+        />
+
+        <TouchableOpacity
+          style={styles.eyeButton}
+          onPress={() =>
+            setShowNewPassword(
+              (current) => !current
+            )
+          }
+        >
+          <Ionicons
+            name={
+              showNewPassword
+                ? "eye-off-outline"
+                : "eye-outline"
+            }
+            size={23}
+            color="#6e473b"
+          />
+        </TouchableOpacity>
+      </View>
+
+      <View
+        style={styles.passwordContainer}
+      >
+        <TextInput
+          style={styles.passwordInput}
+          placeholder="Confirm Password"
+          placeholderTextColor="#8c7665"
+          secureTextEntry={
+            !showConfirmPassword
+          }
+          value={confirmPassword}
+          onChangeText={
+            setConfirmPassword
+          }
+        />
+
+        <TouchableOpacity
+          style={styles.eyeButton}
+          onPress={() =>
+            setShowConfirmPassword(
+              (current) => !current
+            )
+          }
+        >
+          <Ionicons
+            name={
+              showConfirmPassword
+                ? "eye-off-outline"
+                : "eye-outline"
+            }
+            size={23}
+            color="#6e473b"
+          />
+        </TouchableOpacity>
+      </View>
 
       <TouchableOpacity
         style={styles.button}
@@ -153,11 +262,29 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
 
-  input: {
-    backgroundColor: "#fff",
+  passwordContainer: {
+    height: 52,
+    backgroundColor: "#ffffff",
     borderRadius: 12,
-    padding: 15,
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 15,
+  },
+
+  passwordInput: {
+    flex: 1,
+    height: "100%",
+    paddingLeft: 15,
+    paddingRight: 5,
+    color: "#291c0e",
+    fontSize: 16,
+  },
+
+  eyeButton: {
+    width: 50,
+    height: 52,
+    justifyContent: "center",
+    alignItems: "center",
   },
 
   button: {
@@ -169,7 +296,7 @@ const styles = StyleSheet.create({
   },
 
   buttonText: {
-    color: "#fff",
+    color: "#ffffff",
     fontWeight: "bold",
     fontSize: 18,
   },
