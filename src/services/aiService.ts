@@ -6,6 +6,38 @@ export type AIHistoryMessage = {
   text: string;
 };
 
+type AIResponse = {
+  response?: string;
+  error?: string;
+};
+
+const wait = (
+  milliseconds: number
+): Promise<void> => {
+  return new Promise((resolve) => {
+    setTimeout(resolve, milliseconds);
+  });
+};
+
+const sendRequest = async (
+  question: string,
+  history: AIHistoryMessage[]
+): Promise<Response> => {
+  return fetch(AI_API_URL, {
+    method: "POST",
+
+    headers: {
+      "Content-Type":
+        "application/json",
+    },
+
+    body: JSON.stringify({
+      question,
+      history,
+    }),
+  });
+};
+
 export const askBibleCompanion = async (
   question: string,
   history: AIHistoryMessage[] = []
@@ -34,8 +66,7 @@ export const askBibleCompanion = async (
       })
       .map((message) => ({
         role: message.role,
-        text:
-          message.text.trim(),
+        text: message.text.trim(),
       }))
       .filter(
         (message) =>
@@ -43,38 +74,39 @@ export const askBibleCompanion = async (
       )
       .slice(-20);
 
-  const response = await fetch(
-    AI_API_URL,
-    {
-      method: "POST",
-
-      headers: {
-        "Content-Type":
-          "application/json",
-      },
-
-      body: JSON.stringify({
-        question:
-          cleanedQuestion,
-
-        history:
-          cleanedHistory,
-      }),
-    }
+  let response = await sendRequest(
+    cleanedQuestion,
+    cleanedHistory
   );
 
-  const data =
-    await response.json();
+  if (response.status === 503) {
+    await wait(1200);
+
+    response = await sendRequest(
+      cleanedQuestion,
+      cleanedHistory
+    );
+  }
+
+  let data: AIResponse;
+
+  try {
+    data = await response.json();
+  } catch {
+    throw new Error(
+      "The AI Bible Companion returned an invalid response."
+    );
+  }
 
   if (!response.ok) {
     throw new Error(
-      data?.error ||
+      data.error ||
         "The AI Bible Companion could not respond."
     );
   }
 
   if (
-    !data?.response ||
+    !data.response ||
     typeof data.response !== "string"
   ) {
     throw new Error(
