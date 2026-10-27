@@ -1,9 +1,10 @@
 import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
 import { useState } from "react";
 
 import {
+  Keyboard,
   StyleSheet,
-  Text,
   TextInput,
   TouchableOpacity,
   View,
@@ -13,31 +14,64 @@ export default function SearchBar() {
   const [searchText, setSearchText] =
     useState("");
 
+  const openAICompanion = () => {
+    const cleanedQuestion =
+      searchText.trim();
+
+    if (!cleanedQuestion) {
+      return;
+    }
+
+    Keyboard.dismiss();
+
+    router.push({
+      pathname: "/ai",
+      params: {
+        homeQuestion:
+          cleanedQuestion,
+
+        requestId:
+          String(Date.now()),
+      },
+    });
+
+    setSearchText("");
+  };
+
+  const hasText =
+    searchText.trim().length > 0;
+
   return (
     <View style={styles.container}>
       <TextInput
-        placeholder="Search the Bible..."
+        placeholder="Ask the Bible Companion..."
         placeholderTextColor="#a78d78"
         style={styles.input}
         value={searchText}
         onChangeText={setSearchText}
+        returnKeyType="search"
+        autoCorrect
+        onSubmitEditing={
+          openAICompanion
+        }
       />
 
-      {searchText.length > 0 ? (
-        <TouchableOpacity
-          onPress={() => setSearchText("")}
-        >
-          <Text style={styles.clearText}>
-            ×
-          </Text>
-        </TouchableOpacity>
-      ) : (
+      <TouchableOpacity
+        style={styles.searchButton}
+        disabled={!hasText}
+        onPress={openAICompanion}
+        activeOpacity={0.7}
+      >
         <Ionicons
           name="search"
           size={22}
-          color="#6e473b"
+          color={
+            hasText
+              ? "#6e473b"
+              : "#a78d78"
+          }
         />
-      )}
+      </TouchableOpacity>
     </View>
   );
 }
@@ -46,7 +80,6 @@ const styles = StyleSheet.create({
   container: {
     marginHorizontal: 20,
     marginBottom: 35,
-
     height: 48,
 
     backgroundColor: "#f8f4ef",
@@ -59,17 +92,22 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
 
-    paddingHorizontal: 15,
+    paddingLeft: 15,
+    paddingRight: 5,
   },
 
   input: {
     flex: 1,
+    height: "100%",
     fontSize: 16,
     color: "#291c0e",
   },
 
-  clearText: {
-    fontSize: 26,
-    color: "#6e473b",
+  searchButton: {
+    width: 42,
+    height: 44,
+
+    justifyContent: "center",
+    alignItems: "center",
   },
 });

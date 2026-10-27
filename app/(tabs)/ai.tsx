@@ -1,4 +1,12 @@
-import { useRef, useState } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+
+import {
+  useLocalSearchParams,
+} from "expo-router";
 
 import {
   ActivityIndicator,
@@ -16,7 +24,10 @@ import {
 
 import Header from "../../components/Header";
 import QuickPrompts from "../../components/QuickPrompts";
-import { askBibleCompanion } from "../../src/services/aiService";
+
+import {
+  askBibleCompanion,
+} from "../../src/services/aiService";
 
 type ChatMessage = {
   id: string;
@@ -24,9 +35,23 @@ type ChatMessage = {
   text: string;
 };
 
+type AIChatParams = {
+  homeQuestion?: string;
+  requestId?: string;
+};
+
 export default function AIChat() {
+  const {
+    homeQuestion,
+    requestId,
+  } =
+    useLocalSearchParams<AIChatParams>();
+
   const scrollViewRef =
     useRef<ScrollView>(null);
+
+  const handledRequestRef =
+    useRef<string | null>(null);
 
   const [question, setQuestion] =
     useState("");
@@ -66,14 +91,24 @@ export default function AIChat() {
       return "I couldn't connect to the AI Bible Companion. Please check your internet connection and try again.";
     }
 
-    if (message.includes("fetch request has been canceled")) {
+    if (
+      message.includes(
+        "fetch request has been canceled"
+      )
+    ) {
       return "The AI Bible Companion could not complete the request. Please try again.";
     }
 
     if (
-      message.includes("quota exceeded") ||
-      message.includes("resource exhausted") ||
-      message.includes("too many requests")
+      message.includes(
+        "quota exceeded"
+      ) ||
+      message.includes(
+        "resource exhausted"
+      ) ||
+      message.includes(
+        "too many requests"
+      )
     ) {
       return "The AI Bible Companion has received too many requests. Please try again shortly.";
     }
@@ -90,6 +125,14 @@ export default function AIChat() {
       message.includes("not")
     ) {
       return "The AI Bible Companion is temporarily unavailable because its AI model could not be accessed.";
+    }
+
+    if (
+      message.includes(
+        "temporarily unavailable"
+      )
+    ) {
+      return "The AI Bible Companion is temporarily unavailable. Please try again.";
     }
 
     return "I couldn't prepare a response right now. Please try asking your question again.";
@@ -115,16 +158,21 @@ export default function AIChat() {
       return;
     }
 
+    const messageTimestamp =
+      Date.now();
+
     const userMessage: ChatMessage = {
-      id: `user-${Date.now()}`,
+      id: `user-${messageTimestamp}`,
       role: "user",
       text: messageText,
     };
 
-    setMessages((currentMessages) => [
-      ...currentMessages,
-      userMessage,
-    ]);
+    setMessages(
+      (currentMessages) => [
+        ...currentMessages,
+        userMessage,
+      ]
+    );
 
     setQuestion("");
     setIsLoading(true);
@@ -137,16 +185,20 @@ export default function AIChat() {
           messageText
         );
 
-      const assistantMessage: ChatMessage = {
-        id: `assistant-${Date.now()}`,
+      const assistantMessage:
+        ChatMessage = {
+        id:
+          `assistant-${messageTimestamp}`,
         role: "assistant",
         text: response,
       };
 
-      setMessages((currentMessages) => [
-        ...currentMessages,
-        assistantMessage,
-      ]);
+      setMessages(
+        (currentMessages) => [
+          ...currentMessages,
+          assistantMessage,
+        ]
+      );
     } catch (error: any) {
       console.log(
         "AI Bible Companion error:",
@@ -156,31 +208,77 @@ export default function AIChat() {
       const errorMessage =
         getFriendlyErrorMessage(error);
 
-      const assistantErrorMessage: ChatMessage = {
-        id: `assistant-error-${Date.now()}`,
+      const assistantErrorMessage:
+        ChatMessage = {
+        id:
+          `assistant-error-${messageTimestamp}`,
         role: "assistant",
         text: errorMessage,
       };
 
-      setMessages((currentMessages) => [
-        ...currentMessages,
-        assistantErrorMessage,
-      ]);
+      setMessages(
+        (currentMessages) => [
+          ...currentMessages,
+          assistantErrorMessage,
+        ]
+      );
     } finally {
       setIsLoading(false);
-
       scrollToBottom();
     }
   };
 
+  useEffect(() => {
+    const incomingQuestion =
+      typeof homeQuestion === "string"
+        ? homeQuestion.trim()
+        : "";
+
+    const incomingRequestId =
+      typeof requestId === "string"
+        ? requestId
+        : "";
+
+    if (!incomingQuestion) {
+      return;
+    }
+
+    const requestKey =
+      incomingRequestId ||
+      incomingQuestion;
+
+    if (
+      handledRequestRef.current ===
+      requestKey
+    ) {
+      return;
+    }
+
+    if (isLoading) {
+      return;
+    }
+
+    handledRequestRef.current =
+      requestKey;
+
+    sendQuestion(incomingQuestion);
+  }, [
+    homeQuestion,
+    requestId,
+    isLoading,
+  ]);
+
   return (
-    <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView style={styles.keyboardView}
-      behavior={
-        Platform.OS === "ios"
-        ? "padding"
-        : "height"
-      }
+    <SafeAreaView
+      style={styles.container}
+    >
+      <KeyboardAvoidingView
+        style={styles.keyboardView}
+        behavior={
+          Platform.OS === "ios"
+            ? "padding"
+            : "height"
+        }
       >
         <Header
           title="AI Bible Companion"
@@ -188,8 +286,11 @@ export default function AIChat() {
 
         <ScrollView
           ref={scrollViewRef}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={
+            false
+          }
+          keyboardShouldPersistTaps=
+            "handled"
           contentContainerStyle={
             styles.content
           }
@@ -199,8 +300,12 @@ export default function AIChat() {
         >
           {messages.length === 0 ? (
             <>
-              <View style={styles.welcome}>
-                <Text style={styles.heading}>
+              <View
+                style={styles.welcome}
+              >
+                <Text
+                  style={styles.heading}
+                >
                   How can I help you today?
                 </Text>
 
@@ -238,50 +343,61 @@ export default function AIChat() {
                 styles.messagesContainer
               }
             >
-              {messages.map((message) => (
-                <View
-                  key={message.id}
-                  style={[
-                    styles.messageRow,
-                    message.role === "user"
-                      ? styles.userMessageRow
-                      : styles.assistantMessageRow,
-                  ]}
-                >
+              {messages.map(
+                (message) => (
                   <View
+                    key={message.id}
                     style={[
-                      styles.messageBubble,
-                      message.role === "user"
-                        ? styles.userBubble
-                        : styles.assistantBubble,
+                      styles.messageRow,
+
+                      message.role ===
+                      "user"
+                        ? styles.userMessageRow
+                        : styles.assistantMessageRow,
                     ]}
                   >
-                    <Text
+                    <View
                       style={[
-                        styles.messageLabel,
-                        message.role === "user"
-                          ? styles.userLabel
-                          : styles.assistantLabel,
-                      ]}
-                    >
-                      {message.role === "user"
-                        ? "YOU"
-                        : "LIFEGUIDE"}
-                    </Text>
+                        styles.messageBubble,
 
-                    <Text
-                      style={[
-                        styles.messageText,
-                        message.role === "user"
-                          ? styles.userMessageText
-                          : styles.assistantMessageText,
+                        message.role ===
+                        "user"
+                          ? styles.userBubble
+                          : styles.assistantBubble,
                       ]}
                     >
-                      {message.text}
-                    </Text>
+                      <Text
+                        style={[
+                          styles.messageLabel,
+
+                          message.role ===
+                          "user"
+                            ? styles.userLabel
+                            : styles.assistantLabel,
+                        ]}
+                      >
+                        {message.role ===
+                        "user"
+                          ? "YOU"
+                          : "LIFEGUIDE"}
+                      </Text>
+
+                      <Text
+                        style={[
+                          styles.messageText,
+
+                          message.role ===
+                          "user"
+                            ? styles.userMessageText
+                            : styles.assistantMessageText,
+                        ]}
+                      >
+                        {message.text}
+                      </Text>
+                    </View>
                   </View>
-                </View>
-              ))}
+                )
+              )}
 
               {isLoading && (
                 <View
@@ -338,6 +454,7 @@ export default function AIChat() {
             <TouchableOpacity
               style={[
                 styles.sendButton,
+
                 (!question.trim() ||
                   isLoading) &&
                   styles.disabledSendButton,
