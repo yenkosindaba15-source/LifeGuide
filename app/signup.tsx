@@ -1,14 +1,19 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Link, router } from "expo-router";
+import { router } from "expo-router";
 import { doc, setDoc } from "firebase/firestore";
 import { useState } from "react";
 
 import {
   Alert,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   View,
 } from "react-native";
 
@@ -33,9 +38,23 @@ export default function Signup() {
 
   const handleSignup = async () => {
     try {
+      if (
+        !firstName.trim() ||
+        !lastName.trim() ||
+        !email.trim() ||
+        !password.trim()
+      ) {
+        Alert.alert(
+          "Missing Information",
+          "Please complete all fields."
+        );
+
+        return;
+      }
+
       const userCredential =
         await signup(
-          email,
+          email.trim(),
           password
         );
 
@@ -46,9 +65,9 @@ export default function Signup() {
           userCredential.user.uid
         ),
         {
-          firstName,
-          lastName,
-          email,
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
+          email: email.trim(),
           createdAt:
             new Date().toISOString(),
         }
@@ -69,208 +88,265 @@ export default function Signup() {
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.side}>
-        <Text style={styles.heading}>
-          Let's walk into The Light.
-        </Text>
+    <KeyboardAvoidingView
+      style={styles.keyboardView}
+      behavior={
+        Platform.OS === "ios"
+          ? "padding"
+          : "height"
+      }
+    >
+      <TouchableWithoutFeedback
+        onPress={Keyboard.dismiss}
+        accessible={false}
+      >
+        <ScrollView
+          style={styles.container}
+          contentContainerStyle={
+            styles.content
+          }
+          showsVerticalScrollIndicator={
+            false
+          }
+          keyboardShouldPersistTaps="handled"
+        >
+          <View style={styles.side}>
+            <Text style={styles.heading}>
+              Begin Your Journey.
+            </Text>
 
-        <Text style={styles.verse}>
-          "They devoted themselves to the
-          apostles' teaching and to
-          fellowship, to the breaking of
-          bread and to prayer."
-        </Text>
+            <Text style={styles.verse}>
+              "They devoted themselves to
+              the apostles' teaching and to
+              fellowship, to the breaking
+              of bread and to prayer."
+            </Text>
 
-        <Text style={styles.reference}>
-          Acts 2:42
-        </Text>
-      </View>
+            <Text style={styles.reference}>
+              Acts 2:42
+            </Text>
+          </View>
 
-      <View style={styles.wrapper}>
-        <Text style={styles.title}>
-          Sign Up
-        </Text>
+          <View style={styles.wrapper}>
+            <Text style={styles.title}>
+              Sign Up
+            </Text>
 
-        <View style={styles.inputBox}>
-          <Text style={styles.label}>
-            First Name
-          </Text>
+            <View style={styles.inputBox}>
+              <Text style={styles.label}>
+                First Name
+              </Text>
 
-          <TextInput
-            placeholder="John"
-            placeholderTextColor="#ccc"
-            style={styles.input}
-            value={firstName}
-            onChangeText={setFirstName}
-          />
-        </View>
+              <TextInput
+                placeholder="John"
+                placeholderTextColor="#ccc"
+                style={styles.input}
+                value={firstName}
+                onChangeText={setFirstName}
+                returnKeyType="next"
+              />
+            </View>
 
-        <View style={styles.inputBox}>
-          <Text style={styles.label}>
-            Last Name
-          </Text>
+            <View style={styles.inputBox}>
+              <Text style={styles.label}>
+                Last Name
+              </Text>
 
-          <TextInput
-            placeholder="Doe"
-            placeholderTextColor="#ccc"
-            style={styles.input}
-            value={lastName}
-            onChangeText={setLastName}
-          />
-        </View>
+              <TextInput
+                placeholder="Doe"
+                placeholderTextColor="#ccc"
+                style={styles.input}
+                value={lastName}
+                onChangeText={setLastName}
+                returnKeyType="next"
+              />
+            </View>
 
-        <View style={styles.inputBox}>
-          <Text style={styles.label}>
-            Email
-          </Text>
+            <View style={styles.inputBox}>
+              <Text style={styles.label}>
+                Email
+              </Text>
 
-          <TextInput
-            placeholder="you@email.com"
-            placeholderTextColor="#ccc"
-            style={styles.input}
-            value={email}
-            onChangeText={setEmail}
-            autoCapitalize="none"
-            keyboardType="email-address"
-          />
-        </View>
+              <TextInput
+                placeholder="you@email.com"
+                placeholderTextColor="#ccc"
+                style={styles.input}
+                value={email}
+                onChangeText={setEmail}
+                autoCapitalize="none"
+                autoCorrect={false}
+                keyboardType="email-address"
+                returnKeyType="next"
+              />
+            </View>
 
-        <View style={styles.inputBox}>
-          <Text style={styles.label}>
-            Password
-          </Text>
+            <View style={styles.inputBox}>
+              <Text style={styles.label}>
+                Password
+              </Text>
 
-          <View
-            style={styles.passwordContainer}
-          >
-            <TextInput
-              placeholder="Password"
-              placeholderTextColor="#ccc"
-              style={styles.passwordInput}
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry={
-                !showPassword
-              }
-            />
+              <View
+                style={
+                  styles.passwordContainer
+                }
+              >
+                <TextInput
+                  placeholder="Password"
+                  placeholderTextColor="#ccc"
+                  style={
+                    styles.passwordInput
+                  }
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry={
+                    !showPassword
+                  }
+                  returnKeyType="done"
+                  onSubmitEditing={
+                    Keyboard.dismiss
+                  }
+                />
+
+                <TouchableOpacity
+                  style={styles.eyeButton}
+                  onPress={() =>
+                    setShowPassword(
+                      (current) =>
+                        !current
+                    )
+                  }
+                >
+                  <Ionicons
+                    name={
+                      showPassword
+                        ? "eye-off-outline"
+                        : "eye-outline"
+                    }
+                    size={23}
+                    color="#e1d4c2"
+                  />
+                </TouchableOpacity>
+              </View>
+            </View>
 
             <TouchableOpacity
-              style={styles.eyeButton}
-              onPress={() =>
-                setShowPassword(
-                  (current) => !current
-                )
-              }
+              style={styles.button}
+              onPress={handleSignup}
+              activeOpacity={0.8}
             >
-              <Ionicons
-                name={
-                  showPassword
-                    ? "eye-off-outline"
-                    : "eye-outline"
-                }
-                size={23}
-                color="#e1d4c2"
-              />
+              <Text
+                style={styles.buttonText}
+              >
+                Sign Up
+              </Text>
             </TouchableOpacity>
+
+            <View style={styles.bottomRow}>
+              <Text
+                style={styles.bottomText}
+              >
+                Already have an account?{" "}
+              </Text>
+
+              <TouchableOpacity
+                onPress={() =>
+                  router.push("/login")
+                }
+              >
+                <Text style={styles.loginText}>
+                  Login
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>
-
-        <TouchableOpacity
-          style={styles.button}
-          onPress={handleSignup}
-        >
-          <Text style={styles.buttonText}>
-            Sign Up
-          </Text>
-        </TouchableOpacity>
-
-        <View style={styles.bottomRow}>
-          <Text style={styles.bottomText}>
-            Already have an account?{" "}
-          </Text>
-
-          <Link
-            href="/login"
-            style={styles.link}
-          >
-            Login
-          </Link>
-        </View>
-      </View>
-    </View>
+        </ScrollView>
+      </TouchableWithoutFeedback>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  keyboardView: {
     flex: 1,
-    justifyContent: "center",
-    padding: 25,
     backgroundColor: "#6e473b",
   },
 
+  container: {
+    flex: 1,
+    backgroundColor: "#6e473b",
+  },
+
+  content: {
+    flexGrow: 1,
+    paddingHorizontal: 25,
+    paddingTop: 35,
+    paddingBottom: 40,
+    justifyContent: "center",
+  },
+
   side: {
-    marginBottom: 40,
+    marginBottom: 25,
   },
 
   heading: {
-    fontSize: 38,
+    fontSize: 32,
     fontWeight: "bold",
     color: "#dac69b",
-    marginBottom: 10,
+    marginBottom: 12,
   },
 
   verse: {
-    fontSize: 18,
-    color: "white",
-    lineHeight: 30,
+    fontSize: 17,
+    color: "#ffffff",
+    lineHeight: 27,
   },
 
   reference: {
-    marginTop: 15,
+    marginTop: 10,
     color: "#F5E6C5",
     fontWeight: "bold",
     fontStyle: "italic",
-    fontSize: 17,
+    fontSize: 16,
   },
 
   wrapper: {
     backgroundColor:
       "rgba(255,255,255,0.08)",
-    padding: 25,
+    paddingHorizontal: 22,
+    paddingVertical: 24,
     borderRadius: 20,
   },
 
   title: {
     textAlign: "center",
-    fontSize: 34,
+    fontSize: 32,
     color: "#e1d4c2",
     fontWeight: "bold",
-    marginBottom: 20,
+    marginBottom: 18,
   },
 
   inputBox: {
-    marginBottom: 18,
+    marginBottom: 14,
   },
 
   label: {
     color: "#e1d4c2",
-    marginBottom: 8,
-    fontSize: 16,
+    marginBottom: 7,
+    fontSize: 15,
   },
 
   input: {
-    height: 50,
+    height: 48,
     borderRadius: 12,
     backgroundColor:
       "rgba(255,255,255,0.12)",
     paddingHorizontal: 15,
-    color: "white",
+    color: "#ffffff",
+    fontSize: 16,
   },
 
   passwordContainer: {
-    height: 50,
+    height: 48,
     borderRadius: 12,
     backgroundColor:
       "rgba(255,255,255,0.12)",
@@ -283,23 +359,24 @@ const styles = StyleSheet.create({
     height: "100%",
     paddingLeft: 15,
     paddingRight: 5,
-    color: "white",
+    color: "#ffffff",
+    fontSize: 16,
   },
 
   eyeButton: {
-    width: 50,
-    height: 50,
+    width: 48,
+    height: 48,
     justifyContent: "center",
     alignItems: "center",
   },
 
   button: {
     backgroundColor: "#e1d4c2",
-    height: 50,
+    height: 48,
     justifyContent: "center",
     alignItems: "center",
     borderRadius: 12,
-    marginTop: 10,
+    marginTop: 5,
   },
 
   buttonText: {
@@ -311,14 +388,16 @@ const styles = StyleSheet.create({
   bottomRow: {
     flexDirection: "row",
     justifyContent: "center",
-    marginTop: 25,
+    alignItems: "center",
+    flexWrap: "wrap",
+    marginTop: 20,
   },
 
   bottomText: {
     color: "#e1d4c2",
   },
 
-  link: {
+  loginText: {
     color: "#e1d4c2",
     fontWeight: "bold",
   },
