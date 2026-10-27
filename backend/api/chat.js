@@ -93,28 +93,16 @@ Never use:
 - backticks
 - underscores for emphasis
 
-Do not surround headings, Scripture references, or words with formatting symbols.
+Do not surround headings, Scripture references, or words with
+formatting symbols.
 
 If you need a heading, write it as ordinary plain text.
 
-For example:
+Use blank lines between sections to make responses easy to read
+on a mobile phone.
 
-Relevant Scripture
-
-Psalm 42:11
-Scripture text or explanation here.
-
-Practical Faith-Based Next Step
-
-Guidance here.
-
-Prayer Support
-
-Prayer-related guidance here.
-
-Use blank lines between sections to make responses easy to read on a mobile phone.
-
-If a list is useful, use simple numbered items or the bullet character •.
+If a list is useful, use simple numbered items or the bullet
+character •.
 
 Keep paragraphs relatively short.
 
@@ -132,6 +120,16 @@ const sleep = (milliseconds) => {
   });
 };
 
+const cleanResponseText = (text) => {
+  return text
+    .replace(/\*\*/g, "")
+    .replace(/\*/g, "")
+    .replace(/^>\s?/gm, "")
+    .replace(/^#{1,6}\s?/gm, "")
+    .replace(/`/g, "")
+    .trim();
+};
+
 const isRetryableError = (error) => {
   const status = Number(
     error?.status ?? 0
@@ -144,20 +142,62 @@ const isRetryableError = (error) => {
   );
 };
 
-const cleanResponseText = (text) => {
-  return text
-    .replace(/\*\*/g, "")
-    .replace(/\*/g, "")
-    .replace(/^>\s?/gm, "")
-    .replace(/^#{1,6}\s?/gm, "")
-    .replace(/`/g, "")
-    .trim();
+const buildConversationContext = (
+  history,
+  question
+) => {
+  const validHistory =
+    Array.isArray(history)
+      ? history
+          .filter((message) => {
+            return (
+              message &&
+              typeof message.text ===
+                "string" &&
+              (
+                message.role === "user" ||
+                message.role === "assistant"
+              )
+            );
+          })
+          .slice(-20)
+      : [];
+
+  if (validHistory.length === 0) {
+    return question;
+  }
+
+  const conversation =
+    validHistory
+      .map((message) => {
+        const speaker =
+          message.role === "assistant"
+            ? "LifeGuide"
+            : "User";
+
+        return `${speaker}: ${message.text}`;
+      })
+      .join("\n\n");
+
+  return `
+Previous conversation:
+
+${conversation}
+
+Current user question:
+
+${question}
+
+Respond to the current user question while using the previous
+conversation only when it is relevant to understanding the question.
+Continue following all LifeGuide Bible Companion rules.
+`.trim();
 };
 
 const generateWithModel = async (
   ai,
   modelName,
-  question
+  prompt
 ) => {
   const maxAttempts = 3;
 
@@ -171,7 +211,7 @@ const generateWithModel = async (
         await ai.models.generateContent({
           model: modelName,
 
-          contents: question,
+          contents: prompt,
 
           config: {
             systemInstruction:
@@ -179,9 +219,12 @@ const generateWithModel = async (
           },
         });
 
-      const rawText = response.text?.trim();
-      
-      const text = rawText ? cleanResponseText(rawText) : "";
+      const rawText =
+        response.text?.trim();
+
+      const text = rawText
+        ? cleanResponseText(rawText)
+        : "";
 
       if (!text) {
         throw new Error(
@@ -272,6 +315,11 @@ export default {
           ? body.question.trim()
           : "";
 
+      const history =
+        Array.isArray(body?.history)
+          ? body.history
+          : [];
+
       if (!question) {
         return new Response(
           JSON.stringify({
@@ -322,6 +370,12 @@ export default {
         apiKey,
       });
 
+      const prompt =
+        buildConversationContext(
+          history,
+          question
+        );
+
       let finalError = null;
 
       for (const modelName of MODELS) {
@@ -337,7 +391,7 @@ export default {
             await generateWithModel(
               ai,
               modelName,
-              question
+              prompt
             );
 
           const modelResponseTime =
