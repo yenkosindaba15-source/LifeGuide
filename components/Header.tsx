@@ -1,41 +1,118 @@
 import { router } from "expo-router";
-import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { doc, getDoc } from "firebase/firestore";
+import { useCallback, useState } from "react";
+
+import {
+  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+
+import { useFocusEffect } from "expo-router";
+
+import {
+  auth,
+  db,
+} from "../src/services/firebase";
 
 type HeaderProps = {
   title?: string;
 };
 
-export default function Header({ title }: HeaderProps) {
+export default function Header({
+  title,
+}: HeaderProps) {
+  const [firstName, setFirstName] =
+    useState("");
 
-  const hour = new Date().getHours();
+  const loadFirstName = async () => {
+    try {
+      const user = auth.currentUser;
 
-  let greeting = "Good Day!";
+      if (!user) {
+        return;
+      }
 
-  if (hour < 12) {
-    greeting = "Good Morning!";
-  } else if (hour < 18) {
-    greeting = "Good Afternoon!";
-  } else {
-    greeting = "Good Evening!";
-  }
+      const snapshot = await getDoc(
+        doc(
+          db,
+          "users",
+          user.uid
+        )
+      );
 
-  const headerTitle = title ?? greeting;
+      if (snapshot.exists()) {
+        const data = snapshot.data();
+
+        setFirstName(
+          data.firstName || ""
+        );
+      }
+    } catch (error) {
+      console.log(
+        "Unable to load header name:",
+        error
+      );
+    }
+  };
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!title) {
+        loadFirstName();
+      }
+    }, [title])
+  );
+
+  const getGreeting = () => {
+    const hour =
+      new Date().getHours();
+
+    let greeting = "Morning";
+
+    if (hour < 12) {
+      greeting = "Morning";
+    } else if (hour < 18) {
+      greeting = "Afternoon";
+    } else {
+      greeting = "Evening";
+    }
+
+    if (firstName.trim()) {
+      return `${greeting}, ${firstName.trim()}`;
+    }
+
+    return greeting;
+  };
+
+  const headerTitle =
+    title ?? getGreeting();
 
   return (
     <View style={styles.container}>
-
-      <Text style={styles.greeting}>
+      <Text
+        style={styles.greeting}
+        numberOfLines={2}
+      >
         {headerTitle}
       </Text>
 
-      <TouchableOpacity style={styles.logoButton}
-      onPress={() => router.push("/profile")}>
+      <TouchableOpacity
+        style={styles.logoButton}
+        onPress={() =>
+          router.push("/profile")
+        }
+        activeOpacity={0.8}
+      >
         <Image
-          source={require("../assets/images/YHWH-post-e1655321856590.png")}
+          source={require(
+            "../assets/images/YHWH-post-e1655321856590.png"
+          )}
           style={styles.logo}
         />
       </TouchableOpacity>
-
     </View>
   );
 }
@@ -47,14 +124,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
 
     flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent:
+      "space-between",
     alignItems: "center",
   },
 
   greeting: {
+    flex: 1,
     fontSize: 28,
     fontWeight: "600",
     color: "#291c0e",
+    marginRight: 15,
   },
 
   logoButton: {
