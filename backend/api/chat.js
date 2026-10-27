@@ -77,6 +77,48 @@ and reasonably concise.
 
 Do not provide unnecessarily long responses unless the user
 specifically asks for a detailed explanation.
+
+RESPONSE FORMATTING RULES:
+
+Your response will be displayed as plain text inside a mobile application.
+
+Do not use Markdown formatting.
+
+Never use:
+- asterisks for bold or italics
+- Markdown headings using # symbols
+- blockquotes using > symbols
+- Markdown tables
+- Markdown links
+- backticks
+- underscores for emphasis
+
+Do not surround headings, Scripture references, or words with formatting symbols.
+
+If you need a heading, write it as ordinary plain text.
+
+For example:
+
+Relevant Scripture
+
+Psalm 42:11
+Scripture text or explanation here.
+
+Practical Faith-Based Next Step
+
+Guidance here.
+
+Prayer Support
+
+Prayer-related guidance here.
+
+Use blank lines between sections to make responses easy to read on a mobile phone.
+
+If a list is useful, use simple numbered items or the bullet character •.
+
+Keep paragraphs relatively short.
+
+Prefer clear mobile-friendly formatting over decorative formatting.
 `;
 
 const MODELS = [
@@ -100,6 +142,16 @@ const isRetryableError = (error) => {
     status === 429 ||
     status >= 500
   );
+};
+
+const cleanResponseText = (text) => {
+  return text
+    .replace(/\*\*/g, "")
+    .replace(/\*/g, "")
+    .replace(/^>\s?/gm, "")
+    .replace(/^#{1,6}\s?/gm, "")
+    .replace(/`/g, "")
+    .trim();
 };
 
 const generateWithModel = async (
@@ -127,8 +179,9 @@ const generateWithModel = async (
           },
         });
 
-      const text =
-        response.text?.trim();
+      const rawText = response.text?.trim();
+      
+      const text = rawText ? cleanResponseText(rawText) : "";
 
       if (!text) {
         throw new Error(
