@@ -175,13 +175,12 @@ export default function AIChat() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView
-        style={styles.keyboardView}
-        behavior={
-          Platform.OS === "ios"
-            ? "padding"
-            : undefined
-        }
+      <KeyboardAvoidingView style={styles.keyboardView}
+      behavior={
+        Platform.OS === "ios"
+        ? "padding"
+        : "height"
+      }
       >
         <Header
           title="AI Bible Companion"
@@ -386,7 +385,7 @@ const styles = StyleSheet.create({
 
   content: {
     flexGrow: 1,
-    paddingBottom: 180,
+    paddingBottom: 20,
   },
 
   welcome: {
@@ -495,14 +494,10 @@ const styles = StyleSheet.create({
   },
 
   inputArea: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    bottom: 80,
     backgroundColor: "#e1d4c2",
     paddingHorizontal: 20,
     paddingTop: 10,
-    paddingBottom: 10,
+    paddingBottom: 90,
   },
 
   inputContainer: {
