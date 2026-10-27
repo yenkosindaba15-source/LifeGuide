@@ -1,5 +1,12 @@
-import { router } from "expo-router";
-import { useEffect, useState } from "react";
+import {
+  router,
+  useFocusEffect,
+} from "expo-router";
+
+import {
+  useCallback,
+  useState,
+} from "react";
 
 import {
   SafeAreaView,
@@ -10,85 +17,167 @@ import {
   View,
 } from "react-native";
 
-import { doc, getDoc } from "firebase/firestore";
+import {
+  doc,
+  getDoc,
+} from "firebase/firestore";
 
-import { logout } from "../src/services/authService";
-import { auth, db } from "../src/services/firebase";
+import {
+  logout,
+} from "../src/services/authService";
+
+import {
+  auth,
+  db,
+} from "../src/services/firebase";
+
+type ProfileData = {
+  firstName: string;
+  lastName: string;
+  email: string;
+};
 
 export default function Profile() {
-  const [profile, setProfile] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-  });
-
-  useEffect(() => {
-    loadProfile();
-  }, []);
+  const [profile, setProfile] =
+    useState<ProfileData>({
+      firstName: "",
+      lastName: "",
+      email: "",
+    });
 
   const loadProfile = async () => {
     try {
-      const user = auth.currentUser;
+      const user =
+        auth.currentUser;
 
-      if (!user) return;
+      if (!user) {
+        return;
+      }
 
-      const snapshot = await getDoc(
-        doc(db, "users", user.uid)
-      );
+      const snapshot =
+        await getDoc(
+          doc(
+            db,
+            "users",
+            user.uid
+          )
+        );
 
       if (snapshot.exists()) {
-        setProfile(snapshot.data() as any);
+        const data =
+          snapshot.data();
+
+        setProfile({
+          firstName:
+            data.firstName || "",
+
+          lastName:
+            data.lastName || "",
+
+          email:
+            data.email ||
+            user.email ||
+            "",
+        });
       }
     } catch (error) {
-      console.log(error);
+      console.log(
+        "Unable to load profile:",
+        error
+      );
     }
   };
 
-  const handleLogout = async () => {
-    try {
-      await logout();
-      router.replace("/login");
-    } catch (error) {
-      console.log(error);
-    }
-  };
+  useFocusEffect(
+    useCallback(() => {
+      loadProfile();
+    }, [])
+  );
+
+  const handleLogout =
+    async () => {
+      try {
+        await logout();
+
+        router.replace(
+          "/login"
+        );
+      } catch (error) {
+        console.log(error);
+      }
+    };
+
+  const profileInitial =
+    profile.firstName
+      ? profile.firstName
+          .charAt(0)
+          .toUpperCase()
+      : "U";
+
+  const fullName =
+    `${profile.firstName} ${profile.lastName}`.trim();
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView
+      style={styles.container}
+    >
       <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={
+          false
+        }
+        contentContainerStyle={
+          styles.content
+        }
       >
-        {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => router.back()}
+            style={
+              styles.backButton
+            }
+            onPress={() =>
+              router.back()
+            }
           >
-            <Text style={styles.backText}>‹</Text>
+            <Text
+              style={styles.backText}
+            >
+              ‹
+            </Text>
           </TouchableOpacity>
 
-          <Text style={styles.headerTitle}>
+          <Text
+            style={styles.headerTitle}
+          >
             Profile
           </Text>
 
-          <View style={styles.headerSpace} />
+          <View
+            style={styles.headerSpace}
+          />
         </View>
 
-        {/* Profile Section */}
-        <View style={styles.profileSection}>
-          <View style={styles.profileCircle}>
-            <Text style={styles.profileInitial}>
-              {profile.firstName
-                ? profile.firstName
-                    .charAt(0)
-                    .toUpperCase()
-                : "U"}
+        <View
+          style={
+            styles.profileSection
+          }
+        >
+          <View
+            style={
+              styles.profileCircle
+            }
+          >
+            <Text
+              style={
+                styles.profileInitial
+              }
+            >
+              {profileInitial}
             </Text>
           </View>
 
           <Text style={styles.name}>
-            {profile.firstName} {profile.lastName}
+            {fullName ||
+              "LifeGuide User"}
           </Text>
 
           <Text style={styles.email}>
@@ -96,72 +185,117 @@ export default function Profile() {
           </Text>
         </View>
 
-        {/* Account Information */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>
+          <Text
+            style={
+              styles.sectionTitle
+            }
+          >
             ACCOUNT
           </Text>
 
           <View style={styles.card}>
             <View style={styles.row}>
-              <Text style={styles.label}>
+              <Text
+                style={styles.label}
+              >
                 Name
               </Text>
 
-              <Text style={styles.value}>
-                {profile.firstName} {profile.lastName}
+              <Text
+                style={styles.value}
+              >
+                {fullName ||
+                  "Not set"}
               </Text>
             </View>
 
-            <View style={styles.divider} />
+            <View
+              style={styles.divider}
+            />
 
             <View style={styles.row}>
-              <Text style={styles.label}>
+              <Text
+                style={styles.label}
+              >
                 Email
               </Text>
 
-              <Text style={styles.value}>
+              <Text
+                style={styles.value}
+                numberOfLines={2}
+              >
                 {profile.email}
               </Text>
             </View>
           </View>
         </View>
 
-        {/* Settings */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>
+          <Text
+            style={
+              styles.sectionTitle
+            }
+          >
             SETTINGS
           </Text>
 
-          <TouchableOpacity style={styles.option}
-          onPress={() => router.push("/edit-profile")}>
-            <Text style={styles.optionText}>
+          <TouchableOpacity
+            style={styles.option}
+            onPress={() =>
+              router.push(
+                "/edit-profile"
+              )
+            }
+          >
+            <Text
+              style={
+                styles.optionText
+              }
+            >
               Edit Profile
             </Text>
 
-            <Text style={styles.arrow}>
+            <Text
+              style={styles.arrow}
+            >
               ›
             </Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.option}
-          onPress={() => router.push("/change-password")}>
-            <Text style={styles.optionText}>
+          <TouchableOpacity
+            style={styles.option}
+            onPress={() =>
+              router.push(
+                "/change-password"
+              )
+            }
+          >
+            <Text
+              style={
+                styles.optionText
+              }
+            >
               Change Password
             </Text>
 
-            <Text style={styles.arrow}>
+            <Text
+              style={styles.arrow}
+            >
               ›
             </Text>
           </TouchableOpacity>
         </View>
 
-        {/* Logout */}
         <TouchableOpacity
-          style={styles.logoutButton}
+          style={
+            styles.logoutButton
+          }
           onPress={handleLogout}
         >
-          <Text style={styles.logoutText}>
+          <Text
+            style={styles.logoutText}
+          >
             LOG OUT
           </Text>
         </TouchableOpacity>
@@ -170,167 +304,215 @@ export default function Profile() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#e1d4c2",
-  },
+const styles =
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor:
+        "#e1d4c2",
+    },
 
-  content: {
-    paddingBottom: 50,
-  },
+    content: {
+      paddingBottom: 50,
+    },
 
-  header: {
-    height: 70,
-    marginTop: 35,
-    paddingHorizontal: 20,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
+    header: {
+      height: 70,
+      marginTop: 35,
+      paddingHorizontal: 20,
 
-  backButton: {
-    width: 45,
-    height: 45,
-    justifyContent: "center",
-    alignItems: "center",
-  },
+      flexDirection: "row",
+      alignItems: "center",
 
-  backText: {
-    fontSize: 60,
-    color: "#291c0e",
-    lineHeight: 42,
-    marginTop: -2,
-  },
+      justifyContent:
+        "space-between",
+    },
 
-  headerTitle: {
-    fontSize: 30,
-    fontWeight: "600",
-    color: "#291c0e",
-  },
+    backButton: {
+      width: 45,
+      height: 45,
 
-  headerSpace: {
-    width: 45,
-  },
+      justifyContent: "center",
+      alignItems: "center",
+    },
 
-  profileSection: {
-    alignItems: "center",
-    marginTop: 30,
-    marginBottom: 45,
-  },
+    backText: {
+      fontSize: 60,
+      color: "#291c0e",
+      lineHeight: 42,
+      marginTop: -2,
+    },
 
-  profileCircle: {
-    width: 110,
-    height: 110,
-    borderRadius: 55,
-    backgroundColor: "#6e473b",
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 18,
-  },
+    headerTitle: {
+      fontSize: 30,
+      fontWeight: "600",
+      color: "#291c0e",
+    },
 
-  profileInitial: {
-    fontSize: 48,
-    color: "#f8f4ef",
-    fontWeight: "bold",
-  },
+    headerSpace: {
+      width: 45,
+    },
 
-  name: {
-    fontSize: 30,
-    color: "#291c0e",
-    fontWeight: "600",
-    marginBottom: 5,
-  },
+    profileSection: {
+      alignItems: "center",
+      marginTop: 30,
+      marginBottom: 45,
+    },
 
-  email: {
-    fontSize: 18,
-    color: "#6e473b",
-  },
+    profileCircle: {
+      width: 110,
+      height: 110,
 
-  section: {
-    width: "88%",
-    alignSelf: "center",
-    marginBottom: 35,
-  },
+      borderRadius: 55,
 
-  sectionTitle: {
-    fontSize: 18,
-    color: "#6e473b",
-    letterSpacing: 3,
-    marginBottom: 12,
-  },
+      backgroundColor:
+        "#6e473b",
 
-  card: {
-    backgroundColor: "#f8f4ef",
-    borderWidth: 2,
-    borderColor: "#beb5a9",
-    borderRadius: 18,
-    paddingHorizontal: 20,
-  },
+      justifyContent: "center",
+      alignItems: "center",
 
-  row: {
-    minHeight: 65,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
+      marginBottom: 18,
+    },
 
-  label: {
-    fontSize: 18,
-    color: "#6e473b",
-  },
+    profileInitial: {
+      fontSize: 48,
+      color: "#f8f4ef",
+      fontWeight: "bold",
+    },
 
-  value: {
-    fontSize: 18,
-    color: "#291c0e",
-    maxWidth: "60%",
-  },
+    name: {
+      fontSize: 30,
+      color: "#291c0e",
+      fontWeight: "600",
+      marginBottom: 5,
+      textAlign: "center",
+    },
 
-  divider: {
-    height: 1,
-    backgroundColor: "#beb5a9",
-  },
+    email: {
+      fontSize: 18,
+      color: "#6e473b",
+      textAlign: "center",
+    },
 
-  option: {
-    backgroundColor: "#f8f4ef",
-    borderWidth: 2,
-    borderColor: "#beb5a9",
-    borderRadius: 18,
-    minHeight: 60,
-    paddingHorizontal: 20,
-    marginBottom: 12,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
+    section: {
+      width: "88%",
+      alignSelf: "center",
+      marginBottom: 35,
+    },
 
-  optionText: {
-    fontSize: 19,
-    color: "#291c0e",
-  },
+    sectionTitle: {
+      fontSize: 18,
+      color: "#6e473b",
+      letterSpacing: 3,
+      marginBottom: 12,
+    },
 
-  arrow: {
-    fontSize: 30,
-    color: "#6e473b",
-  },
+    card: {
+      backgroundColor:
+        "#f8f4ef",
 
-  logoutButton: {
-    width: "70%",
-    height: 50,
-    alignSelf: "center",
-    borderRadius: 18,
-    backgroundColor: "#f8f4ef",
-    borderWidth: 2,
-    borderColor: "#c62828",
-    justifyContent: "center",
-    alignItems: "center",
-    marginTop: 5,
-  },
+      borderWidth: 2,
 
-  logoutText: {
-    color: "#c62828",
-    fontSize: 17,
-    fontWeight: "bold",
-    letterSpacing: 1,
-  },
-});
+      borderColor:
+        "#beb5a9",
+
+      borderRadius: 18,
+
+      paddingHorizontal: 20,
+    },
+
+    row: {
+      minHeight: 65,
+
+      flexDirection: "row",
+
+      alignItems: "center",
+
+      justifyContent:
+        "space-between",
+    },
+
+    label: {
+      fontSize: 18,
+      color: "#6e473b",
+    },
+
+    value: {
+      fontSize: 18,
+      color: "#291c0e",
+      maxWidth: "60%",
+      textAlign: "right",
+    },
+
+    divider: {
+      height: 1,
+
+      backgroundColor:
+        "#beb5a9",
+    },
+
+    option: {
+      backgroundColor:
+        "#f8f4ef",
+
+      borderWidth: 2,
+
+      borderColor:
+        "#beb5a9",
+
+      borderRadius: 18,
+
+      minHeight: 60,
+
+      paddingHorizontal: 20,
+
+      marginBottom: 12,
+
+      flexDirection: "row",
+
+      alignItems: "center",
+
+      justifyContent:
+        "space-between",
+    },
+
+    optionText: {
+      fontSize: 19,
+      color: "#291c0e",
+    },
+
+    arrow: {
+      fontSize: 30,
+      color: "#6e473b",
+    },
+
+    logoutButton: {
+      width: "70%",
+      height: 50,
+
+      alignSelf: "center",
+
+      borderRadius: 18,
+
+      backgroundColor:
+        "#f8f4ef",
+
+      borderWidth: 2,
+
+      borderColor:
+        "#c62828",
+
+      justifyContent: "center",
+
+      alignItems: "center",
+
+      marginTop: 5,
+    },
+
+    logoutText: {
+      color: "#c62828",
+      fontSize: 17,
+      fontWeight: "bold",
+      letterSpacing: 1,
+    },
+  });
