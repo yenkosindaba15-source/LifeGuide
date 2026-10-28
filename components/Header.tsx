@@ -81,10 +81,10 @@ export default function Header({
     }
 
     if (firstName.trim()) {
-      return `${greeting}, ${firstName.trim()}`;
+      return `${greeting}, ${firstName.trim()}.`;
     }
 
-    return greeting;
+    return `${greeting}.`;
   };
 
   const headerTitle =
