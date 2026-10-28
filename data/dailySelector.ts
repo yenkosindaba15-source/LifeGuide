@@ -1,37 +1,133 @@
 import {
+  DailyContent,
+  dailyContent,
   DailyDevotional,
-  dailyDevotionals,
-  dailyHomeContent,
   HomeDailyContent,
 } from "./dailyContent";
 
-function getDayOfYear(): number {
-  const today = new Date();
+// LifeGuide's official daily-content start date.
+// JavaScript months are zero-based:
+// 6 = July.
+export const DAILY_CONTENT_START_DATE =
+  new Date(2026, 6, 1);
 
-  const startOfYear = new Date(today.getFullYear(), 0, 0);
+const ONE_DAY =
+  1000 * 60 * 60 * 24;
+
+const normalizeDate = (
+  date: Date
+): Date => {
+  return new Date(
+    date.getFullYear(),
+    date.getMonth(),
+    date.getDate()
+  );
+};
+
+export function getDaysSinceStart(
+  date: Date = new Date()
+): number {
+  const normalizedDate =
+    normalizeDate(date);
+
+  const normalizedStart =
+    normalizeDate(
+      DAILY_CONTENT_START_DATE
+    );
 
   const difference =
-    today.getTime() - startOfYear.getTime();
+    normalizedDate.getTime() -
+    normalizedStart.getTime();
 
-  const oneDay = 1000 * 60 * 60 * 24;
-
-  return Math.floor(difference / oneDay);
+  return Math.floor(
+    difference / ONE_DAY
+  );
 }
 
-export function getDailyHomeContent(): HomeDailyContent {
-  const dayOfYear = getDayOfYear();
+export function isWithinDailyHistory(
+  date: Date
+): boolean {
+  const normalizedDate =
+    normalizeDate(date);
 
-  const index =
-    (dayOfYear - 1) % dailyHomeContent.length;
+  const normalizedStart =
+    normalizeDate(
+      DAILY_CONTENT_START_DATE
+    );
 
-  return dailyHomeContent[index];
+  return (
+    normalizedDate.getTime() >=
+    normalizedStart.getTime()
+  );
 }
 
-export function getDailyDevotional(): DailyDevotional {
-  const dayOfYear = getDayOfYear();
+export function getDailyContentForDate(
+  date: Date = new Date()
+): DailyContent {
+  const daysSinceStart =
+    getDaysSinceStart(date);
+
+  const safeDay =
+    Math.max(
+      0,
+      daysSinceStart
+    );
 
   const index =
-    (dayOfYear - 1) % dailyDevotionals.length;
+    safeDay %
+    dailyContent.length;
 
-  return dailyDevotionals[index];
+  return dailyContent[index];
+}
+
+export function getDailyContent():
+  DailyContent {
+  return getDailyContentForDate(
+    new Date()
+  );
+}
+
+export function getDailyHomeContent():
+  HomeDailyContent {
+  return getDailyContent().home;
+}
+
+export function getDailyHomeContentForDate(
+  date: Date
+): HomeDailyContent {
+  return getDailyContentForDate(
+    date
+  ).home;
+}
+
+export function getDailyDevotional():
+  DailyDevotional {
+  return getDailyContent()
+    .devotional;
+}
+
+export function getDailyDevotionalForDate(
+  date: Date
+): DailyDevotional {
+  return getDailyContentForDate(
+    date
+  ).devotional;
+}
+
+export function getDailyContentIndexForDate(
+  date: Date
+): number {
+  const daysSinceStart =
+    getDaysSinceStart(date);
+
+  const safeDay =
+    Math.max(
+      0,
+      daysSinceStart
+    );
+
+  return (
+    safeDay %
+    dailyContent.length
+  );
 }
