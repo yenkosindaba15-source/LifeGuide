@@ -65,7 +65,7 @@ export default function MoreMenu({
           }}
         >
           <Text style={styles.text}>
-            Verse of the Day
+            Verse History
           </Text>
         </TouchableOpacity>
 
@@ -77,7 +77,7 @@ export default function MoreMenu({
           }}
         >
           <Text style={styles.text}>
-            Devotions
+            Devotional History
           </Text>
         </TouchableOpacity>
 
