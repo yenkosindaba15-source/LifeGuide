@@ -285,7 +285,30 @@ export default function Profile() {
               ›
             </Text>
           </TouchableOpacity>
-        </View>
+
+          <TouchableOpacity
+          style={styles.option}
+          onPress={() => router.push("/delete-account")
+          }
+          >
+            <Text
+            style={[
+              styles.optionText,
+              styles.deleteOptionText,
+            ]}
+            >
+              Delete Account
+              </Text>
+              <Text
+              style={[
+                styles.arrow,
+                styles.deleteOptionText,
+              ]}
+              >
+                ›
+                </Text>
+              </TouchableOpacity>
+            </View>
 
         <TouchableOpacity
           style={
@@ -514,5 +537,8 @@ const styles =
       fontSize: 17,
       fontWeight: "bold",
       letterSpacing: 1,
+    },
+    deleteOptionText: {
+      color: "#c62828",
     },
   });
