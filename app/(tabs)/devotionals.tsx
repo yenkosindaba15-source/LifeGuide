@@ -1,73 +1,115 @@
 import {
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from "react-native";
 
+import {
+  SafeAreaView,
+} from "react-native-safe-area-context";
+
 import BottomNavigation from "../../components/BottomNavigation";
 import Header from "../../components/Header";
-import { getDailyDevotional } from "../../data/dailySelector";
+
+import {
+  getDailyDevotional,
+} from "../../data/dailySelector";
 
 export default function Devotionals() {
-  const daily = getDailyDevotional();
+  const daily =
+    getDailyDevotional();
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Header */}
+    <SafeAreaView
+      style={styles.container}
+      edges={[
+        "top",
+        "left",
+        "right",
+      ]}
+    >
       <Header title="Devotion." />
 
-      {/* Devotional Content */}
       <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={
+          false
+        }
+        contentContainerStyle={
+          styles.content
+        }
       >
-        <View style={styles.devotionContainer}>
-          {/* Title */}
-          <Text style={styles.devotionTitle}>{daily.title}</Text>
+        <View
+          style={
+            styles.devotionContainer
+          }
+        >
+          <Text
+            style={
+              styles.devotionTitle
+            }
+          >
+            {daily.title}
+          </Text>
 
-          {/* Verse */}
-          <Text style={styles.devotionVerse}>
+          <Text
+            style={
+              styles.devotionVerse
+            }
+          >
             "{daily.verse}"
           </Text>
 
-          {/* Reference */}
-          <Text style={styles.devotionReference}>
+          <Text
+            style={
+              styles.devotionReference
+            }
+          >
             {daily.reference}
           </Text>
 
-          {/* Divider */}
-          <View style={styles.divider} />
+          <View
+            style={styles.divider}
+          />
 
-          {/* Today's Message */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>
+            <Text
+              style={
+                styles.sectionTitle
+              }
+            >
               Today's Message
             </Text>
 
-            <Text style={styles.message}>
+            <Text
+              style={styles.message}
+            >
               {daily.message}
             </Text>
           </View>
 
-          {/* Divider */}
-          <View style={styles.divider} />
+          <View
+            style={styles.divider}
+          />
 
-          {/* Prayer */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>
+            <Text
+              style={
+                styles.sectionTitle
+              }
+            >
               Prayer
             </Text>
 
-            <Text style={styles.prayer}>
+            <Text
+              style={styles.prayer}
+            >
               {daily.prayer}
             </Text>
           </View>
         </View>
       </ScrollView>
 
-      {/* Bottom Navigation */}
       <BottomNavigation />
     </SafeAreaView>
   );

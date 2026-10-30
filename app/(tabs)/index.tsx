@@ -1,4 +1,10 @@
-import { SafeAreaView, ScrollView } from "react-native";
+import {
+  ScrollView,
+} from "react-native";
+
+import {
+  SafeAreaView,
+} from "react-native-safe-area-context";
 
 import BottomNavigation from "../../components/BottomNavigation";
 import Header from "../../components/Header";
@@ -13,16 +19,26 @@ export default function Home() {
         flex: 1,
         backgroundColor: "#e1d4c2",
       }}
+      edges={[
+        "top",
+        "left",
+        "right",
+      ]}
     >
       <Header />
 
       <SearchBar />
 
       <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 110 }}
+        showsVerticalScrollIndicator={
+          false
+        }
+        contentContainerStyle={{
+          paddingBottom: 120,
+        }}
       >
         <VerseCard />
+
         <PrayerCard />
       </ScrollView>
 

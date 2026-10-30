@@ -119,13 +119,12 @@ export default function Header({
 
 const styles = StyleSheet.create({
   container: {
-    marginTop: 55,
-    marginBottom: 30,
+    marginTop: 33,
+    marginBottom: 25,
     paddingHorizontal: 20,
 
     flexDirection: "row",
-    justifyContent:
-      "space-between",
+    justifyContent: "space-between",
     alignItems: "center",
   },
 
