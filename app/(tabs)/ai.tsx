@@ -680,7 +680,7 @@ export default function AIChat() {
   const inputBottomPadding =
     keyboardVisible
       ? 8
-      : 80 +
+      : 64 +
         Math.max(
           insets.bottom,
           8
