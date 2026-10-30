@@ -16,6 +16,9 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import {
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 
 import { getChapter } from "../../../src/services/bibleService";
 import { auth, db } from "../../../src/services/firebase";
@@ -34,6 +37,8 @@ export default function ChapterReader() {
     chapter?: string;
     targetVerse?: string;
   }>();
+
+  const insets = useSafeAreaInsets();
 
   const scrollViewRef = useRef<ScrollView>(null);
 
@@ -456,7 +461,19 @@ export default function ChapterReader() {
 
       {/* Bottom Save Action Bar */}
       {selectedVerse && (
-        <View style={styles.actionBar}>
+        <View
+  style={[
+    styles.actionBar,
+    {
+      paddingBottom:
+        14 +
+        Math.max(
+          insets.bottom,
+          8
+        ),
+    },
+  ]}
+>
           <View style={styles.selectedReferenceArea}>
             <Text style={styles.selectedReference}>
               {book} {chapter}:{selectedVerse.verse}
@@ -664,7 +681,6 @@ const styles = StyleSheet.create({
     borderTopColor: "#beb5a9",
     paddingHorizontal: 20,
     paddingTop: 14,
-    paddingBottom: 18,
     flexDirection: "row",
     alignItems: "center",
   },
