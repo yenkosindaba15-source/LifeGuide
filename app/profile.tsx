@@ -9,13 +9,16 @@ import {
 } from "react";
 
 import {
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
+
+import {
+  SafeAreaView,
+} from "react-native-safe-area-context";
 
 import {
   doc,
@@ -35,6 +38,7 @@ type ProfileData = {
   firstName: string;
   lastName: string;
   email: string;
+  createdAt?: unknown;
 };
 
 export default function Profile() {
@@ -43,6 +47,7 @@ export default function Profile() {
       firstName: "",
       lastName: "",
       email: "",
+      createdAt: undefined,
     });
 
   const loadProfile = async () => {
@@ -78,6 +83,9 @@ export default function Profile() {
             data.email ||
             user.email ||
             "",
+
+          createdAt:
+            data.createdAt,
         });
       }
     } catch (error) {
@@ -99,13 +107,60 @@ export default function Profile() {
       try {
         await logout();
 
-        router.replace(
-          "/login"
-        );
+        router.replace("/login");
       } catch (error) {
         console.log(error);
       }
     };
+
+  const formatDate = (
+    value: unknown
+  ): string => {
+    if (!value) {
+      return "Unavailable";
+    }
+
+    let date: Date | null = null;
+
+    if (
+      typeof value === "string"
+    ) {
+      date = new Date(value);
+    } else if (
+      typeof value === "object" &&
+      value !== null &&
+      "toDate" in value &&
+      typeof (
+        value as {
+          toDate?: unknown;
+        }
+      ).toDate === "function"
+    ) {
+      date = (
+        value as {
+          toDate: () => Date;
+        }
+      ).toDate();
+    }
+
+    if (
+      !date ||
+      Number.isNaN(
+        date.getTime()
+      )
+    ) {
+      return "Unavailable";
+    }
+
+    return date.toLocaleDateString(
+      "en-GB",
+      {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      }
+    );
+  };
 
   const profileInitial =
     profile.firstName
@@ -120,6 +175,12 @@ export default function Profile() {
   return (
     <SafeAreaView
       style={styles.container}
+      edges={[
+        "top",
+        "left",
+        "right",
+        "bottom",
+      ]}
     >
       <ScrollView
         showsVerticalScrollIndicator={
@@ -131,9 +192,7 @@ export default function Profile() {
       >
         <View style={styles.header}>
           <TouchableOpacity
-            style={
-              styles.backButton
-            }
+            style={styles.backButton}
             onPress={() =>
               router.back()
             }
@@ -191,20 +250,16 @@ export default function Profile() {
               styles.sectionTitle
             }
           >
-            ACCOUNT
+            ACCOUNT SUMMARY
           </Text>
 
           <View style={styles.card}>
             <View style={styles.row}>
-              <Text
-                style={styles.label}
-              >
+              <Text style={styles.label}>
                 Name
               </Text>
 
-              <Text
-                style={styles.value}
-              >
+              <Text style={styles.value}>
                 {fullName ||
                   "Not set"}
               </Text>
@@ -215,9 +270,7 @@ export default function Profile() {
             />
 
             <View style={styles.row}>
-              <Text
-                style={styles.label}
-              >
+              <Text style={styles.label}>
                 Email
               </Text>
 
@@ -226,6 +279,22 @@ export default function Profile() {
                 numberOfLines={2}
               >
                 {profile.email}
+              </Text>
+            </View>
+
+            <View
+              style={styles.divider}
+            />
+
+            <View style={styles.row}>
+              <Text style={styles.label}>
+                Account Created
+              </Text>
+
+              <Text style={styles.value}>
+                {formatDate(
+                  profile.createdAt
+                )}
               </Text>
             </View>
           </View>
@@ -256,9 +325,7 @@ export default function Profile() {
               Edit Profile
             </Text>
 
-            <Text
-              style={styles.arrow}
-            >
+            <Text style={styles.arrow}>
               ›
             </Text>
           </TouchableOpacity>
@@ -279,36 +346,38 @@ export default function Profile() {
               Change Password
             </Text>
 
-            <Text
-              style={styles.arrow}
-            >
+            <Text style={styles.arrow}>
               ›
             </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-          style={styles.option}
-          onPress={() => router.push("/delete-account")
-          }
+            style={styles.option}
+            onPress={() =>
+              router.push(
+                "/delete-account"
+              )
+            }
           >
             <Text
-            style={[
-              styles.optionText,
-              styles.deleteOptionText,
-            ]}
+              style={[
+                styles.optionText,
+                styles.deleteOptionText,
+              ]}
             >
               Delete Account
-              </Text>
-              <Text
+            </Text>
+
+            <Text
               style={[
                 styles.arrow,
                 styles.deleteOptionText,
               ]}
-              >
-                ›
-                </Text>
-              </TouchableOpacity>
-            </View>
+            >
+              ›
+            </Text>
+          </TouchableOpacity>
+        </View>
 
         <TouchableOpacity
           style={
@@ -327,218 +396,180 @@ export default function Profile() {
   );
 }
 
-const styles =
-  StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor:
-        "#e1d4c2",
-    },
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#e1d4c2",
+  },
 
-    content: {
-      paddingBottom: 50,
-    },
+  content: {
+    paddingBottom: 50,
+  },
 
-    header: {
-      height: 70,
-      marginTop: 35,
-      paddingHorizontal: 20,
+  header: {
+    height: 70,
+    paddingHorizontal: 20,
 
-      flexDirection: "row",
-      alignItems: "center",
+    flexDirection: "row",
+    alignItems: "center",
 
-      justifyContent:
-        "space-between",
-    },
+    justifyContent:
+      "space-between",
+  },
 
-    backButton: {
-      width: 45,
-      height: 45,
+  backButton: {
+    width: 45,
+    height: 45,
 
-      justifyContent: "center",
-      alignItems: "center",
-    },
+    justifyContent: "center",
+    alignItems: "center",
+  },
 
-    backText: {
-      fontSize: 60,
-      color: "#291c0e",
-      lineHeight: 42,
-      marginTop: -2,
-    },
+  backText: {
+    fontSize: 60,
+    color: "#291c0e",
+    lineHeight: 42,
+    marginTop: -2,
+  },
 
-    headerTitle: {
-      fontSize: 30,
-      fontWeight: "600",
-      color: "#291c0e",
-    },
+  headerTitle: {
+    fontSize: 30,
+    fontWeight: "600",
+    color: "#291c0e",
+  },
 
-    headerSpace: {
-      width: 45,
-    },
+  headerSpace: {
+    width: 45,
+  },
 
-    profileSection: {
-      alignItems: "center",
-      marginTop: 30,
-      marginBottom: 45,
-    },
+  profileSection: {
+    alignItems: "center",
+    marginTop: 20,
+    marginBottom: 40,
+  },
 
-    profileCircle: {
-      width: 110,
-      height: 110,
+  profileCircle: {
+    width: 110,
+    height: 110,
+    borderRadius: 55,
+    backgroundColor: "#6e473b",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 18,
+  },
 
-      borderRadius: 55,
+  profileInitial: {
+    fontSize: 48,
+    color: "#f8f4ef",
+    fontWeight: "bold",
+  },
 
-      backgroundColor:
-        "#6e473b",
+  name: {
+    fontSize: 30,
+    color: "#291c0e",
+    fontWeight: "600",
+    marginBottom: 5,
+    textAlign: "center",
+  },
 
-      justifyContent: "center",
-      alignItems: "center",
+  email: {
+    fontSize: 18,
+    color: "#6e473b",
+    textAlign: "center",
+  },
 
-      marginBottom: 18,
-    },
+  section: {
+    width: "88%",
+    alignSelf: "center",
+    marginBottom: 35,
+  },
 
-    profileInitial: {
-      fontSize: 48,
-      color: "#f8f4ef",
-      fontWeight: "bold",
-    },
+  sectionTitle: {
+    fontSize: 18,
+    color: "#6e473b",
+    letterSpacing: 3,
+    marginBottom: 12,
+  },
 
-    name: {
-      fontSize: 30,
-      color: "#291c0e",
-      fontWeight: "600",
-      marginBottom: 5,
-      textAlign: "center",
-    },
+  card: {
+    backgroundColor: "#f8f4ef",
+    borderWidth: 2,
+    borderColor: "#beb5a9",
+    borderRadius: 18,
+    paddingHorizontal: 20,
+  },
 
-    email: {
-      fontSize: 18,
-      color: "#6e473b",
-      textAlign: "center",
-    },
+  row: {
+    minHeight: 65,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent:
+      "space-between",
+  },
 
-    section: {
-      width: "88%",
-      alignSelf: "center",
-      marginBottom: 35,
-    },
+  label: {
+    fontSize: 17,
+    color: "#6e473b",
+    maxWidth: "42%",
+  },
 
-    sectionTitle: {
-      fontSize: 18,
-      color: "#6e473b",
-      letterSpacing: 3,
-      marginBottom: 12,
-    },
+  value: {
+    fontSize: 17,
+    color: "#291c0e",
+    maxWidth: "56%",
+    textAlign: "right",
+  },
 
-    card: {
-      backgroundColor:
-        "#f8f4ef",
+  divider: {
+    height: 1,
+    backgroundColor: "#beb5a9",
+  },
 
-      borderWidth: 2,
+  option: {
+    backgroundColor: "#f8f4ef",
+    borderWidth: 2,
+    borderColor: "#beb5a9",
+    borderRadius: 18,
+    minHeight: 60,
+    paddingHorizontal: 20,
+    marginBottom: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent:
+      "space-between",
+  },
 
-      borderColor:
-        "#beb5a9",
+  optionText: {
+    fontSize: 19,
+    color: "#291c0e",
+  },
 
-      borderRadius: 18,
+  arrow: {
+    fontSize: 30,
+    color: "#6e473b",
+  },
 
-      paddingHorizontal: 20,
-    },
+  deleteOptionText: {
+    color: "#c62828",
+  },
 
-    row: {
-      minHeight: 65,
+  logoutButton: {
+    width: "70%",
+    height: 50,
+    alignSelf: "center",
+    borderRadius: 18,
+    backgroundColor: "#f8f4ef",
+    borderWidth: 2,
+    borderColor: "#c62828",
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: 5,
+  },
 
-      flexDirection: "row",
-
-      alignItems: "center",
-
-      justifyContent:
-        "space-between",
-    },
-
-    label: {
-      fontSize: 18,
-      color: "#6e473b",
-    },
-
-    value: {
-      fontSize: 18,
-      color: "#291c0e",
-      maxWidth: "60%",
-      textAlign: "right",
-    },
-
-    divider: {
-      height: 1,
-
-      backgroundColor:
-        "#beb5a9",
-    },
-
-    option: {
-      backgroundColor:
-        "#f8f4ef",
-
-      borderWidth: 2,
-
-      borderColor:
-        "#beb5a9",
-
-      borderRadius: 18,
-
-      minHeight: 60,
-
-      paddingHorizontal: 20,
-
-      marginBottom: 12,
-
-      flexDirection: "row",
-
-      alignItems: "center",
-
-      justifyContent:
-        "space-between",
-    },
-
-    optionText: {
-      fontSize: 19,
-      color: "#291c0e",
-    },
-
-    arrow: {
-      fontSize: 30,
-      color: "#6e473b",
-    },
-
-    logoutButton: {
-      width: "70%",
-      height: 50,
-
-      alignSelf: "center",
-
-      borderRadius: 18,
-
-      backgroundColor:
-        "#f8f4ef",
-
-      borderWidth: 2,
-
-      borderColor:
-        "#c62828",
-
-      justifyContent: "center",
-
-      alignItems: "center",
-
-      marginTop: 5,
-    },
-
-    logoutText: {
-      color: "#c62828",
-      fontSize: 17,
-      fontWeight: "bold",
-      letterSpacing: 1,
-    },
-    deleteOptionText: {
-      color: "#c62828",
-    },
-  });
+  logoutText: {
+    color: "#c62828",
+    fontSize: 17,
+    fontWeight: "bold",
+    letterSpacing: 1,
+  },
+});

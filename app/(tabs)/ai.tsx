@@ -1,8 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-
-import {
-  useLocalSearchParams,
-} from "expo-router";
+import { useLocalSearchParams } from "expo-router";
 
 import {
   useEffect,
@@ -13,10 +10,10 @@ import {
 import {
   ActivityIndicator,
   Alert,
+  Keyboard,
   KeyboardAvoidingView,
   Modal,
   Platform,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
@@ -24,6 +21,11 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 
 import Header from "../../components/Header";
 import QuickPrompts from "../../components/QuickPrompts";
@@ -56,12 +58,18 @@ type AIChatParams = {
   requestId?: string;
 };
 
+type SendQuestionOptions = {
+  forceNewChat?: boolean;
+};
+
 export default function AIChat() {
   const {
     homeQuestion,
     requestId,
-  } =
-    useLocalSearchParams<AIChatParams>();
+  } = useLocalSearchParams<AIChatParams>();
+
+  const insets =
+    useSafeAreaInsets();
 
   const scrollViewRef =
     useRef<ScrollView>(null);
@@ -69,7 +77,11 @@ export default function AIChat() {
   const handledRequestRef =
     useRef<string | null>(null);
 
-  const sendingRef = useRef(false);
+  const sendingRef =
+    useRef(false);
+
+  const currentChatIdRef =
+    useRef<string | null>(null);
 
   const [question, setQuestion] =
     useState("");
@@ -83,38 +95,37 @@ export default function AIChat() {
   const [
     currentChatId,
     setCurrentChatId,
-  ] =
-    useState<string | null>(null);
+  ] = useState<string | null>(null);
 
   const [
     currentChatTitle,
     setCurrentChatTitle,
-  ] =
-    useState<string | null>(null);
+  ] = useState<string | null>(null);
 
   const [
     chatHistory,
     setChatHistory,
-  ] =
-    useState<SavedChat[]>([]);
+  ] = useState<SavedChat[]>([]);
 
   const [
     historyVisible,
     setHistoryVisible,
-  ] =
-    useState(false);
+  ] = useState(false);
 
   const [
     historyLoading,
     setHistoryLoading,
-  ] =
-    useState(false);
+  ] = useState(false);
 
   const [
     openingChat,
     setOpeningChat,
-  ] =
-    useState(false);
+  ] = useState(false);
+
+  const [
+    keyboardVisible,
+    setKeyboardVisible,
+  ] = useState(false);
 
   const scrollToBottom = () => {
     setTimeout(() => {
@@ -124,9 +135,18 @@ export default function AIChat() {
     }, 100);
   };
 
+  const setActiveChatId = (
+    chatId: string | null
+  ) => {
+    currentChatIdRef.current =
+      chatId;
+
+    setCurrentChatId(chatId);
+  };
+
   const createTitle = (
     text: string
-  ) => {
+  ): string => {
     const cleaned =
       text
         .replace(/\s+/g, " ")
@@ -144,7 +164,7 @@ export default function AIChat() {
 
   const getFriendlyErrorMessage = (
     error: any
-  ) => {
+  ): string => {
     const message =
       String(
         error?.message ?? ""
@@ -181,12 +201,8 @@ export default function AIChat() {
     }
 
     if (
-      message.includes(
-        "permission"
-      ) ||
-      message.includes(
-        "unauthorized"
-      )
+      message.includes("permission") ||
+      message.includes("unauthorized")
     ) {
       return "LifeGuide does not currently have permission to complete this request.";
     }
@@ -235,26 +251,29 @@ export default function AIChat() {
     };
 
   const startNewChat = () => {
-  if (
-    isLoading ||
-    sendingRef.current
-  ) {
-    Alert.alert(
-      "Please Wait",
-      "Please allow the current response to finish before starting a new chat."
-    );
+    if (
+      isLoading ||
+      sendingRef.current
+    ) {
+      Alert.alert(
+        "Please Wait",
+        "Please allow the current response to finish before starting a new chat."
+      );
 
-    return;
-  }
+      return;
+    }
 
-  handledRequestRef.current = null;
+    handledRequestRef.current =
+      null;
 
-  setMessages([]);
-  setQuestion("");
-  setCurrentChatId(null);
-  setCurrentChatTitle(null);
-  setHistoryVisible(false);
-};
+    setMessages([]);
+    setQuestion("");
+    setActiveChatId(null);
+    setCurrentChatTitle(null);
+    setHistoryVisible(false);
+
+    Keyboard.dismiss();
+  };
 
   const openSavedChat =
     async (chat: SavedChat) => {
@@ -265,7 +284,11 @@ export default function AIChat() {
         return;
       }
 
-      if (isLoading) {
+      if (
+        isLoading ||
+        sendingRef.current ||
+        openingChat
+      ) {
         return;
       }
 
@@ -292,9 +315,7 @@ export default function AIChat() {
           convertedMessages
         );
 
-        setCurrentChatId(
-          chat.id
-        );
+        setActiveChatId(chat.id);
 
         setCurrentChatTitle(
           chat.title
@@ -303,6 +324,9 @@ export default function AIChat() {
         setQuestion("");
 
         setHistoryVisible(false);
+
+        handledRequestRef.current =
+          null;
 
         scrollToBottom();
       } catch (error) {
@@ -331,7 +355,6 @@ export default function AIChat() {
           text: "Cancel",
           style: "cancel",
         },
-
         {
           text: "Delete",
           style: "destructive",
@@ -351,18 +374,13 @@ export default function AIChat() {
               );
 
               if (
-                currentChatId ===
+                currentChatIdRef.current ===
                 chat.id
               ) {
                 setMessages([]);
-
-                setCurrentChatId(
-                  null
-                );
-
-                setCurrentChatTitle(
-                  null
-                );
+                setQuestion("");
+                setActiveChatId(null);
+                setCurrentChatTitle(null);
               }
 
               await loadChatHistory();
@@ -384,7 +402,8 @@ export default function AIChat() {
   };
 
   const sendQuestion = async (
-    selectedQuestion?: string
+    selectedQuestion?: string,
+    options: SendQuestionOptions = {}
   ) => {
     const messageText = (
       selectedQuestion ??
@@ -400,78 +419,71 @@ export default function AIChat() {
       return;
     }
 
-    if (isLoading || sendingRef.current) {
+    if (
+      isLoading ||
+      sendingRef.current
+    ) {
       return;
     }
-    
-    sendingRef.current = true;
-    
-    const user = auth.currentUser;
+
+    const user =
+      auth.currentUser;
 
     if (!user) {
-      sendingRef.current = false;
-      
-      Alert.alert("Login Required", "Please log in before using the AI Bible Companion.");
-      
+      Alert.alert(
+        "Login Required",
+        "Please log in before using the AI Bible Companion."
+      );
+
       return;
     }
 
+    sendingRef.current = true;
+
+    const shouldStartNewChat =
+      options.forceNewChat === true;
+
     const previousMessages =
-      [...messages];
+      shouldStartNewChat
+        ? []
+        : [...messages];
+
+    const existingChatId =
+      shouldStartNewChat
+        ? null
+        : currentChatIdRef.current;
+
+    if (shouldStartNewChat) {
+      setMessages([]);
+      setActiveChatId(null);
+      setCurrentChatTitle(null);
+    }
 
     const timestamp =
       Date.now();
 
     const userMessage:
       ChatMessage = {
-      id:
-        `user-${timestamp}`,
+      id: `user-${timestamp}`,
       role: "user",
       text: messageText,
     };
 
     setMessages(
-      (currentMessages) => [
-        ...currentMessages,
-        userMessage,
-      ]
+      shouldStartNewChat
+        ? [userMessage]
+        : (currentMessages) => [
+            ...currentMessages,
+            userMessage,
+          ]
     );
 
     setQuestion("");
-
     setIsLoading(true);
 
     scrollToBottom();
 
-    let activeChatId =
-      currentChatId;
-
     try {
-      if (!activeChatId) {
-        activeChatId =
-          await createAIChat(
-            user.uid,
-            messageText
-          );
-
-        setCurrentChatId(
-          activeChatId
-        );
-
-        setCurrentChatTitle(
-          createTitle(
-            messageText
-          )
-        );
-      }
-
-      await saveAIChatMessage(
-        user.uid,
-        activeChatId,
-        "user",
-        messageText
-      );
-
       const historyForAI =
         previousMessages.map(
           (message) => ({
@@ -499,6 +511,34 @@ export default function AIChat() {
           ...currentMessages,
           assistantMessage,
         ]
+      );
+
+      let activeChatId =
+        existingChatId;
+
+      if (!activeChatId) {
+        activeChatId =
+          await createAIChat(
+            user.uid,
+            messageText
+          );
+
+        setActiveChatId(
+          activeChatId
+        );
+
+        setCurrentChatTitle(
+          createTitle(
+            messageText
+          )
+        );
+      }
+
+      await saveAIChatMessage(
+        user.uid,
+        activeChatId,
+        "user",
+        messageText
       );
 
       await saveAIChatMessage(
@@ -542,6 +582,39 @@ export default function AIChat() {
   };
 
   useEffect(() => {
+    const showEvent =
+      Platform.OS === "ios"
+        ? "keyboardWillShow"
+        : "keyboardDidShow";
+
+    const hideEvent =
+      Platform.OS === "ios"
+        ? "keyboardWillHide"
+        : "keyboardDidHide";
+
+    const showSubscription =
+      Keyboard.addListener(
+        showEvent,
+        () => {
+          setKeyboardVisible(true);
+        }
+      );
+
+    const hideSubscription =
+      Keyboard.addListener(
+        hideEvent,
+        () => {
+          setKeyboardVisible(false);
+        }
+      );
+
+    return () => {
+      showSubscription.remove();
+      hideSubscription.remove();
+    };
+  }, []);
+
+  useEffect(() => {
     const incomingQuestion =
       typeof homeQuestion ===
       "string"
@@ -569,23 +642,18 @@ export default function AIChat() {
       return;
     }
 
-    if (isLoading) {
+    if (sendingRef.current) {
       return;
     }
 
     handledRequestRef.current =
       requestKey;
 
-    if (messages.length > 0) {
-      setMessages([]);
-
-      setCurrentChatId(null);
-
-      setCurrentChatTitle(null);
-    }
-
     sendQuestion(
-      incomingQuestion
+      incomingQuestion,
+      {
+        forceNewChat: true,
+      }
     );
   }, [
     homeQuestion,
@@ -594,7 +662,7 @@ export default function AIChat() {
 
   const formatChatDate = (
     date?: Date
-  ) => {
+  ): string => {
     if (!date) {
       return "";
     }
@@ -609,14 +677,26 @@ export default function AIChat() {
     );
   };
 
+  const inputBottomPadding =
+    keyboardVisible
+      ? 8
+      : 80 +
+        Math.max(
+          insets.bottom,
+          8
+        );
+
   return (
     <SafeAreaView
       style={styles.container}
+      edges={[
+        "top",
+        "left",
+        "right",
+      ]}
     >
       <KeyboardAvoidingView
-        style={
-          styles.keyboardView
-        }
+        style={styles.keyboardView}
         behavior={
           Platform.OS === "ios"
             ? "padding"
@@ -628,9 +708,7 @@ export default function AIChat() {
         />
 
         <View
-          style={
-            styles.chatActions
-          }
+          style={styles.chatActions}
         >
           <TouchableOpacity
             style={
@@ -693,8 +771,7 @@ export default function AIChat() {
           showsVerticalScrollIndicator={
             false
           }
-          keyboardShouldPersistTaps=
-            "handled"
+          keyboardShouldPersistTaps="handled"
           contentContainerStyle={
             styles.content
           }
@@ -705,14 +782,10 @@ export default function AIChat() {
           {messages.length === 0 ? (
             <>
               <View
-                style={
-                  styles.welcome
-                }
+                style={styles.welcome}
               >
                 <Text
-                  style={
-                    styles.heading
-                  }
+                  style={styles.heading}
                 >
                   How can I help you today?
                 </Text>
@@ -723,9 +796,8 @@ export default function AIChat() {
                   }
                 >
                   Ask questions about
-                  Scripture, Christian
-                  faith, prayer, or
-                  Christian living.
+                  Scripture, Christian faith,
+                  prayer, or Christian living.
                 </Text>
 
                 <Text
@@ -734,9 +806,8 @@ export default function AIChat() {
                   }
                 >
                   LifeGuide answers only
-                  Bible-related and
-                  Christian faith-related
-                  questions.
+                  Bible-related and Christian
+                  faith-related questions.
                 </Text>
               </View>
 
@@ -833,8 +904,7 @@ export default function AIChat() {
                         styles.loadingText
                       }
                     >
-                      Preparing a
-                      Bible-based
+                      Preparing a Bible-based
                       response...
                     </Text>
                   </View>
@@ -845,7 +915,13 @@ export default function AIChat() {
         </ScrollView>
 
         <View
-          style={styles.inputArea}
+          style={[
+            styles.inputArea,
+            {
+              paddingBottom:
+                inputBottomPadding,
+            },
+          ]}
         >
           <View
             style={
@@ -857,9 +933,7 @@ export default function AIChat() {
               placeholderTextColor="#a78d78"
               style={styles.input}
               value={question}
-              onChangeText={
-                setQuestion
-              }
+              onChangeText={setQuestion}
               editable={!isLoading}
               multiline
               maxLength={1000}
@@ -890,9 +964,7 @@ export default function AIChat() {
                 />
               ) : (
                 <Text
-                  style={
-                    styles.sendText
-                  }
+                  style={styles.sendText}
                 >
                   ➤
                 </Text>
@@ -911,14 +983,10 @@ export default function AIChat() {
         }
       >
         <View
-          style={
-            styles.modalOverlay
-          }
+          style={styles.modalOverlay}
         >
           <View
-            style={
-              styles.historyModal
-            }
+            style={styles.historyModal}
           >
             <View
               style={
@@ -950,6 +1018,30 @@ export default function AIChat() {
                 />
               </TouchableOpacity>
             </View>
+
+            {!historyLoading && (
+              <View
+                style={
+                  styles.historySummary
+                }
+              >
+                <Text
+                  style={
+                    styles.historySummaryLabel
+                  }
+                >
+                  Total Conversations
+                </Text>
+
+                <Text
+                  style={
+                    styles.historySummaryValue
+                  }
+                >
+                  {chatHistory.length}
+                </Text>
+              </View>
+            )}
 
             {historyLoading ? (
               <View
@@ -997,8 +1089,8 @@ export default function AIChat() {
                   }
                 >
                   Your Bible Companion
-                  conversations will
-                  appear here.
+                  conversations will appear
+                  here.
                 </Text>
               </View>
             ) : (
@@ -1079,403 +1171,350 @@ export default function AIChat() {
   );
 }
 
-const styles =
-  StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: "#e1d4c2",
-    },
-
-    keyboardView: {
-      flex: 1,
-    },
-
-    chatActions: {
-      flexDirection: "row",
-      paddingHorizontal: 20,
-      marginBottom: 10,
-      gap: 12,
-    },
-
-    chatActionButton: {
-      flex: 1,
-      minHeight: 46,
-
-      backgroundColor:
-        "#f8f4ef",
-
-      borderWidth: 1,
-
-      borderColor:
-        "#beb5a9",
-
-      borderRadius: 14,
-
-      flexDirection: "row",
-
-      justifyContent:
-        "center",
-
-      alignItems: "center",
-
-      gap: 8,
-    },
-
-    chatActionText: {
-      color: "#6e473b",
-      fontSize: 15,
-      fontWeight: "600",
-    },
-
-    currentChatTitle: {
-      color: "#6e473b",
-      fontSize: 14,
-      fontWeight: "600",
-      textAlign: "center",
-      paddingHorizontal: 25,
-      marginBottom: 5,
-    },
-
-    content: {
-      flexGrow: 1,
-      paddingBottom: 20,
-    },
-
-    welcome: {
-      alignItems: "center",
-      marginTop: 20,
-      marginBottom: 25,
-      paddingHorizontal: 25,
-    },
-
-    heading: {
-      fontSize: 32,
-      color: "#291c0e",
-      textAlign: "center",
-      marginBottom: 12,
-    },
-
-    description: {
-      fontSize: 18,
-      lineHeight: 28,
-      color: "#6e473b",
-      textAlign: "center",
-    },
-
-    boundaryText: {
-      fontSize: 14,
-      lineHeight: 21,
-      color: "#8c7665",
-      textAlign: "center",
-      marginTop: 14,
-    },
-
-    messagesContainer: {
-      paddingHorizontal: 16,
-      paddingTop: 10,
-    },
-
-    messageRow: {
-      width: "100%",
-      marginBottom: 14,
-    },
-
-    userMessageRow: {
-      alignItems: "flex-end",
-    },
-
-    assistantMessageRow: {
-      alignItems: "flex-start",
-    },
-
-    messageBubble: {
-      maxWidth: "86%",
-      borderRadius: 18,
-      paddingVertical: 13,
-      paddingHorizontal: 16,
-    },
-
-    userBubble: {
-      backgroundColor: "#6e473b",
-      borderBottomRightRadius: 5,
-    },
-
-    assistantBubble: {
-      backgroundColor: "#f8f4ef",
-      borderWidth: 1,
-      borderColor: "#beb5a9",
-      borderBottomLeftRadius: 5,
-    },
-
-    messageLabel: {
-      fontSize: 11,
-      fontWeight: "bold",
-      letterSpacing: 1,
-      marginBottom: 6,
-    },
-
-    userLabel: {
-      color: "#e1d4c2",
-    },
-
-    assistantLabel: {
-      color: "#6e473b",
-    },
-
-    messageText: {
-      fontSize: 17,
-      lineHeight: 26,
-    },
-
-    userMessageText: {
-      color: "#ffffff",
-    },
-
-    assistantMessageText: {
-      color: "#291c0e",
-    },
-
-    loadingBubble: {
-      flexDirection: "row",
-      alignItems: "center",
-    },
-
-    loadingText: {
-      color: "#6e473b",
-      fontSize: 15,
-      marginLeft: 10,
-    },
-
-    inputArea: {
-      backgroundColor: "#e1d4c2",
-      paddingHorizontal: 20,
-      paddingTop: 10,
-      paddingBottom: 90,
-    },
-
-    inputContainer: {
-      minHeight: 58,
-      maxHeight: 125,
-
-      flexDirection: "row",
-      alignItems: "center",
-
-      backgroundColor:
-        "#f8f4ef",
-
-      borderWidth: 2,
-
-      borderColor:
-        "#beb5a9",
-
-      borderRadius: 29,
-
-      overflow: "hidden",
-    },
-
-    input: {
-      flex: 1,
-
-      minHeight: 54,
-      maxHeight: 115,
-
-      paddingHorizontal: 18,
-      paddingVertical: 12,
-
-      fontSize: 17,
-
-      lineHeight: 23,
-
-      color: "#291c0e",
-    },
-
-    sendButton: {
-      width: 62,
-      minHeight: 58,
-
-      alignSelf: "stretch",
-
-      backgroundColor: "#6e473b",
-
-      justifyContent: "center",
-
-      alignItems: "center",
-    },
-
-    disabledSendButton: {
-      backgroundColor: "#a78d78",
-    },
-
-    sendText: {
-      color: "#ffffff",
-      fontSize: 22,
-      fontWeight: "bold",
-    },
-
-    modalOverlay: {
-      flex: 1,
-
-      backgroundColor:
-        "rgba(0,0,0,0.35)",
-
-      justifyContent: "flex-end",
-    },
-
-    historyModal: {
-      height: "72%",
-
-      backgroundColor:
-        "#e1d4c2",
-
-      borderTopLeftRadius: 26,
-
-      borderTopRightRadius: 26,
-
-      paddingTop: 12,
-    },
-
-    historyHeader: {
-      minHeight: 60,
-
-      paddingHorizontal: 20,
-
-      flexDirection: "row",
-
-      alignItems: "center",
-
-      justifyContent:
-        "space-between",
-
-      borderBottomWidth: 1,
-
-      borderBottomColor:
-        "#beb5a9",
-    },
-
-    historyTitle: {
-      fontSize: 25,
-
-      fontWeight: "bold",
-
-      color: "#291c0e",
-    },
-
-    closeButton: {
-      width: 44,
-      height: 44,
-
-      justifyContent: "center",
-
-      alignItems: "center",
-    },
-
-    historyLoading: {
-      flex: 1,
-
-      justifyContent: "center",
-
-      alignItems: "center",
-    },
-
-    historyLoadingText: {
-      marginTop: 12,
-
-      color: "#6e473b",
-
-      fontSize: 16,
-    },
-
-    emptyHistory: {
-      flex: 1,
-
-      justifyContent: "center",
-
-      alignItems: "center",
-
-      paddingHorizontal: 30,
-    },
-
-    emptyHistoryTitle: {
-      color: "#291c0e",
-
-      fontSize: 22,
-
-      fontWeight: "bold",
-
-      marginTop: 15,
-
-      marginBottom: 8,
-    },
-
-    emptyHistoryText: {
-      color: "#6e473b",
-
-      fontSize: 16,
-
-      textAlign: "center",
-
-      lineHeight: 24,
-    },
-
-    historyList: {
-      padding: 16,
-      paddingBottom: 35,
-    },
-
-    historyItem: {
-      minHeight: 76,
-
-      backgroundColor:
-        "#f8f4ef",
-
-      borderWidth: 1,
-
-      borderColor:
-        "#beb5a9",
-
-      borderRadius: 16,
-
-      marginBottom: 12,
-
-      flexDirection: "row",
-
-      alignItems: "center",
-    },
-
-    historyOpenArea: {
-      flex: 1,
-
-      minHeight: 76,
-
-      justifyContent: "center",
-
-      paddingLeft: 16,
-
-      paddingRight: 8,
-    },
-
-    historyItemTitle: {
-      color: "#291c0e",
-
-      fontSize: 17,
-
-      fontWeight: "600",
-
-      marginBottom: 6,
-    },
-
-    historyDate: {
-      color: "#8c7665",
-
-      fontSize: 13,
-    },
-
-    deleteButton: {
-      width: 54,
-      height: 76,
-
-      justifyContent: "center",
-
-      alignItems: "center",
-    },
-  });
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#e1d4c2",
+  },
+
+  keyboardView: {
+    flex: 1,
+  },
+
+  chatActions: {
+    flexDirection: "row",
+    paddingHorizontal: 20,
+    marginBottom: 10,
+    gap: 12,
+  },
+
+  chatActionButton: {
+    flex: 1,
+    minHeight: 46,
+    backgroundColor: "#f8f4ef",
+    borderWidth: 1,
+    borderColor: "#beb5a9",
+    borderRadius: 14,
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 8,
+  },
+
+  chatActionText: {
+    color: "#6e473b",
+    fontSize: 15,
+    fontWeight: "600",
+  },
+
+  currentChatTitle: {
+    color: "#6e473b",
+    fontSize: 14,
+    fontWeight: "600",
+    textAlign: "center",
+    paddingHorizontal: 25,
+    marginBottom: 5,
+  },
+
+  content: {
+    flexGrow: 1,
+    paddingBottom: 20,
+  },
+
+  welcome: {
+    alignItems: "center",
+    marginTop: 20,
+    marginBottom: 25,
+    paddingHorizontal: 25,
+  },
+
+  heading: {
+    fontSize: 32,
+    color: "#291c0e",
+    textAlign: "center",
+    marginBottom: 12,
+  },
+
+  description: {
+    fontSize: 18,
+    lineHeight: 28,
+    color: "#6e473b",
+    textAlign: "center",
+  },
+
+  boundaryText: {
+    fontSize: 14,
+    lineHeight: 21,
+    color: "#8c7665",
+    textAlign: "center",
+    marginTop: 14,
+  },
+
+  messagesContainer: {
+    paddingHorizontal: 16,
+    paddingTop: 10,
+  },
+
+  messageRow: {
+    width: "100%",
+    marginBottom: 14,
+  },
+
+  userMessageRow: {
+    alignItems: "flex-end",
+  },
+
+  assistantMessageRow: {
+    alignItems: "flex-start",
+  },
+
+  messageBubble: {
+    maxWidth: "86%",
+    borderRadius: 18,
+    paddingVertical: 13,
+    paddingHorizontal: 16,
+  },
+
+  userBubble: {
+    backgroundColor: "#6e473b",
+    borderBottomRightRadius: 5,
+  },
+
+  assistantBubble: {
+    backgroundColor: "#f8f4ef",
+    borderWidth: 1,
+    borderColor: "#beb5a9",
+    borderBottomLeftRadius: 5,
+  },
+
+  messageLabel: {
+    fontSize: 11,
+    fontWeight: "bold",
+    letterSpacing: 1,
+    marginBottom: 6,
+  },
+
+  userLabel: {
+    color: "#e1d4c2",
+  },
+
+  assistantLabel: {
+    color: "#6e473b",
+  },
+
+  messageText: {
+    fontSize: 17,
+    lineHeight: 26,
+  },
+
+  userMessageText: {
+    color: "#ffffff",
+  },
+
+  assistantMessageText: {
+    color: "#291c0e",
+  },
+
+  loadingBubble: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+
+  loadingText: {
+    color: "#6e473b",
+    fontSize: 15,
+    marginLeft: 10,
+  },
+
+  inputArea: {
+    backgroundColor: "#e1d4c2",
+    paddingHorizontal: 20,
+    paddingTop: 8,
+  },
+
+  inputContainer: {
+    minHeight: 58,
+    maxHeight: 125,
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#f8f4ef",
+    borderWidth: 2,
+    borderColor: "#beb5a9",
+    borderRadius: 29,
+    overflow: "hidden",
+  },
+
+  input: {
+    flex: 1,
+    minHeight: 54,
+    maxHeight: 115,
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+    fontSize: 17,
+    lineHeight: 23,
+    color: "#291c0e",
+  },
+
+  sendButton: {
+    width: 62,
+    minHeight: 58,
+    alignSelf: "stretch",
+    backgroundColor: "#6e473b",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  disabledSendButton: {
+    backgroundColor: "#a78d78",
+  },
+
+  sendText: {
+    color: "#ffffff",
+    fontSize: 22,
+    fontWeight: "bold",
+  },
+
+  modalOverlay: {
+    flex: 1,
+    backgroundColor:
+      "rgba(0,0,0,0.35)",
+    justifyContent: "flex-end",
+  },
+
+  historyModal: {
+    height: "72%",
+    backgroundColor: "#e1d4c2",
+    borderTopLeftRadius: 26,
+    borderTopRightRadius: 26,
+    paddingTop: 12,
+  },
+
+  historyHeader: {
+    minHeight: 60,
+    paddingHorizontal: 20,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent:
+      "space-between",
+    borderBottomWidth: 1,
+    borderBottomColor: "#beb5a9",
+  },
+
+  historyTitle: {
+    fontSize: 25,
+    fontWeight: "bold",
+    color: "#291c0e",
+  },
+
+  closeButton: {
+    width: 44,
+    height: 44,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  historySummary: {
+    marginHorizontal: 16,
+    marginTop: 14,
+    marginBottom: 4,
+    minHeight: 58,
+    paddingHorizontal: 16,
+    backgroundColor: "#f8f4ef",
+    borderWidth: 1,
+    borderColor: "#beb5a9",
+    borderRadius: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent:
+      "space-between",
+  },
+
+  historySummaryLabel: {
+    color: "#6e473b",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+
+  historySummaryValue: {
+    color: "#291c0e",
+    fontSize: 24,
+    fontWeight: "bold",
+  },
+
+  historyLoading: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  historyLoadingText: {
+    marginTop: 12,
+    color: "#6e473b",
+    fontSize: 16,
+  },
+
+  emptyHistory: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 30,
+  },
+
+  emptyHistoryTitle: {
+    color: "#291c0e",
+    fontSize: 22,
+    fontWeight: "bold",
+    marginTop: 15,
+    marginBottom: 8,
+  },
+
+  emptyHistoryText: {
+    color: "#6e473b",
+    fontSize: 16,
+    textAlign: "center",
+    lineHeight: 24,
+  },
+
+  historyList: {
+    padding: 16,
+    paddingBottom: 35,
+  },
+
+  historyItem: {
+    minHeight: 76,
+    backgroundColor: "#f8f4ef",
+    borderWidth: 1,
+    borderColor: "#beb5a9",
+    borderRadius: 16,
+    marginBottom: 12,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+
+  historyOpenArea: {
+    flex: 1,
+    minHeight: 76,
+    justifyContent: "center",
+    paddingLeft: 16,
+    paddingRight: 8,
+  },
+
+  historyItemTitle: {
+    color: "#291c0e",
+    fontSize: 17,
+    fontWeight: "600",
+    marginBottom: 6,
+  },
+
+  historyDate: {
+    color: "#8c7665",
+    fontSize: 13,
+  },
+
+  deleteButton: {
+    width: 54,
+    height: 76,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+});
