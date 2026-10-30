@@ -1,30 +1,34 @@
-import {
-    Ionicons,
-} from "@expo/vector-icons";
-
+import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 
 import { useState } from "react";
 
 import {
-    ActivityIndicator,
-    Alert,
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  View,
 } from "react-native";
 
 import {
-    deleteCurrentAuthUser,
-    reauthenticateUser,
+  SafeAreaView,
+} from "react-native-safe-area-context";
+
+import {
+  deleteCurrentAuthUser,
+  reauthenticateUser,
 } from "../src/services/authService";
 
 import {
-    deleteCurrentUserData,
+  deleteCurrentUserData,
 } from "../src/services/accountDeletionService";
 
 export default function DeleteAccount() {
@@ -64,7 +68,6 @@ export default function DeleteAccount() {
           text: "Cancel",
           style: "cancel",
         },
-
         {
           text: "Delete Account",
           style: "destructive",
@@ -84,6 +87,8 @@ export default function DeleteAccount() {
       try {
         setIsDeleting(true);
 
+        Keyboard.dismiss();
+
         await reauthenticateUser(
           password
         );
@@ -92,9 +97,7 @@ export default function DeleteAccount() {
 
         await deleteCurrentAuthUser();
 
-        router.replace(
-          "/login"
-        );
+        router.replace("/login");
 
         setTimeout(() => {
           Alert.alert(
@@ -129,6 +132,32 @@ export default function DeleteAccount() {
           return;
         }
 
+        if (
+          errorCode.includes(
+            "too-many-requests"
+          )
+        ) {
+          Alert.alert(
+            "Too Many Attempts",
+            "Access has been temporarily limited because of repeated attempts. Please try again later."
+          );
+
+          return;
+        }
+
+        if (
+          errorCode.includes(
+            "network-request-failed"
+          )
+        ) {
+          Alert.alert(
+            "Connection Error",
+            "Please check your internet connection and try again."
+          );
+
+          return;
+        }
+
         Alert.alert(
           "Unable to Delete Account",
           "LifeGuide could not completely delete the account. Please check your connection and password, then try again."
@@ -141,196 +170,218 @@ export default function DeleteAccount() {
   return (
     <SafeAreaView
       style={styles.container}
+      edges={[
+        "top",
+        "left",
+        "right",
+        "bottom",
+      ]}
     >
-      <ScrollView
-        contentContainerStyle={
-          styles.content
+      <KeyboardAvoidingView
+        style={styles.keyboardView}
+        behavior={
+          Platform.OS === "ios"
+            ? "padding"
+            : "height"
         }
-        keyboardShouldPersistTaps="handled"
       >
-        <View style={styles.header}>
-          <TouchableOpacity
-            style={
-              styles.backButton
+        <TouchableWithoutFeedback
+          onPress={Keyboard.dismiss}
+          accessible={false}
+        >
+          <ScrollView
+            showsVerticalScrollIndicator={
+              false
             }
-            disabled={isDeleting}
-            onPress={() =>
-              router.back()
+            keyboardShouldPersistTaps="handled"
+            contentContainerStyle={
+              styles.content
             }
           >
-            <Text
-              style={styles.backText}
-            >
-              ‹
-            </Text>
-          </TouchableOpacity>
+            <View style={styles.header}>
+              <TouchableOpacity
+                style={
+                  styles.backButton
+                }
+                disabled={isDeleting}
+                onPress={() =>
+                  router.back()
+                }
+              >
+                <Text
+                  style={
+                    styles.backText
+                  }
+                >
+                  ‹
+                </Text>
+              </TouchableOpacity>
 
-          <Text
-            style={
-              styles.headerTitle
-            }
-          >
-            Delete Account
-          </Text>
+              <Text
+                style={
+                  styles.headerTitle
+                }
+              >
+                Delete Account
+              </Text>
 
-          <View
-            style={
-              styles.headerSpace
-            }
-          />
-        </View>
+              <View
+                style={
+                  styles.headerSpace
+                }
+              />
+            </View>
 
-        <View
-          style={
-            styles.warningIcon
-          }
-        >
-          <Ionicons
-            name="warning-outline"
-            size={42}
-            color="#c62828"
-          />
-        </View>
-
-        <Text
-          style={
-            styles.warningTitle
-          }
-        >
-          Permanently delete your
-          LifeGuide account
-        </Text>
-
-        <Text
-          style={
-            styles.description
-          }
-        >
-          Deleting your account removes
-          your profile information,
-          saved Bible highlights, and
-          AI Bible Companion chat
-          history.
-        </Text>
-
-        <View
-          style={styles.warningCard}
-        >
-          <Text
-            style={
-              styles.warningCardTitle
-            }
-          >
-            This cannot be undone.
-          </Text>
-
-          <Text
-            style={
-              styles.warningCardText
-            }
-          >
-            You will lose access to the
-            account and its saved
-            LifeGuide data permanently.
-          </Text>
-        </View>
-
-        <Text
-          style={
-            styles.passwordLabel
-          }
-        >
-          Current Password
-        </Text>
-
-        <View
-          style={
-            styles.passwordContainer
-          }
-        >
-          <TextInput
-            style={
-              styles.passwordInput
-            }
-            placeholder="Enter current password"
-            placeholderTextColor="#8c7665"
-            secureTextEntry={
-              !showPassword
-            }
-            value={password}
-            onChangeText={
-              setPassword
-            }
-            editable={!isDeleting}
-            autoCapitalize="none"
-          />
-
-          <TouchableOpacity
-            style={
-              styles.eyeButton
-            }
-            disabled={isDeleting}
-            onPress={() =>
-              setShowPassword(
-                (current) =>
-                  !current
-              )
-            }
-          >
-            <Ionicons
-              name={
-                showPassword
-                  ? "eye-off-outline"
-                  : "eye-outline"
+            <View
+              style={
+                styles.warningIcon
               }
-              size={23}
-              color="#6e473b"
-            />
-          </TouchableOpacity>
-        </View>
+            >
+              <Ionicons
+                name="warning-outline"
+                size={42}
+                color="#c62828"
+              />
+            </View>
 
-        <TouchableOpacity
-          style={[
-            styles.deleteButton,
-
-            isDeleting &&
-              styles.disabledButton,
-          ]}
-          disabled={isDeleting}
-          onPress={startDeletion}
-        >
-          {isDeleting ? (
-            <ActivityIndicator
-              size="small"
-              color="#ffffff"
-            />
-          ) : (
             <Text
               style={
-                styles.deleteButtonText
+                styles.warningTitle
               }
             >
-              DELETE ACCOUNT
+              Permanently delete your
+              LifeGuide account
             </Text>
-          )}
-        </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.cancelButton}
-          disabled={isDeleting}
-          onPress={() =>
-            router.back()
-          }
-        >
-          <Text
-            style={
-              styles.cancelText
-            }
-          >
-            Cancel
-          </Text>
-        </TouchableOpacity>
-      </ScrollView>
+            <Text
+              style={
+                styles.description
+              }
+            >
+              Deleting your account
+              removes your profile
+              information, saved Bible
+              highlights, and AI Bible
+              Companion chat history.
+            </Text>
+
+            <View
+              style={
+                styles.warningCard
+              }
+            >
+              <Text
+                style={
+                  styles.warningCardTitle
+                }
+              >
+                This cannot be undone.
+              </Text>
+
+              <Text
+                style={
+                  styles.warningCardText
+                }
+              >
+                You will lose access to
+                the account and its saved
+                LifeGuide data
+                permanently.
+              </Text>
+            </View>
+
+            <Text
+              style={
+                styles.passwordLabel
+              }
+            >
+              Current Password
+            </Text>
+
+            <View
+              style={
+                styles.passwordContainer
+              }
+            >
+              <TextInput
+                style={
+                  styles.passwordInput
+                }
+                placeholder="Enter current password"
+                placeholderTextColor="#8c7665"
+                secureTextEntry={
+                  !showPassword
+                }
+                value={password}
+                onChangeText={
+                  setPassword
+                }
+                editable={
+                  !isDeleting
+                }
+                autoCapitalize="none"
+                autoCorrect={false}
+                returnKeyType="done"
+                onSubmitEditing={
+                  Keyboard.dismiss
+                }
+              />
+
+              <TouchableOpacity
+                style={
+                  styles.eyeButton
+                }
+                disabled={
+                  isDeleting
+                }
+                onPress={() =>
+                  setShowPassword(
+                    (current) =>
+                      !current
+                  )
+                }
+              >
+                <Ionicons
+                  name={
+                    showPassword
+                      ? "eye-off-outline"
+                      : "eye-outline"
+                  }
+                  size={23}
+                  color="#6e473b"
+                />
+              </TouchableOpacity>
+            </View>
+
+            <TouchableOpacity
+              style={[
+                styles.deleteButton,
+
+                isDeleting &&
+                  styles.disabledButton,
+              ]}
+              disabled={isDeleting}
+              activeOpacity={0.8}
+              onPress={startDeletion}
+            >
+              {isDeleting ? (
+                <ActivityIndicator
+                  size="small"
+                  color="#ffffff"
+                />
+              ) : (
+                <Text
+                  style={
+                    styles.deleteButtonText
+                  }
+                >
+                  DELETE ACCOUNT
+                </Text>
+              )}
+            </TouchableOpacity>
+          </ScrollView>
+        </TouchableWithoutFeedback>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -344,16 +395,20 @@ const styles =
         "#e1d4c2",
     },
 
+    keyboardView: {
+      flex: 1,
+    },
+
     content: {
+      flexGrow: 1,
+
       paddingHorizontal: 24,
 
-      paddingBottom: 45,
+      paddingBottom: 40,
     },
 
     header: {
-      minHeight: 100,
-
-      paddingTop: 30,
+      minHeight: 80,
 
       flexDirection: "row",
 
@@ -416,7 +471,7 @@ const styles =
 
       alignSelf: "center",
 
-      marginTop: 20,
+      marginTop: 18,
 
       marginBottom: 22,
     },
@@ -559,23 +614,5 @@ const styles =
       fontWeight: "bold",
 
       letterSpacing: 1,
-    },
-
-    cancelButton: {
-      minHeight: 50,
-
-      justifyContent: "center",
-
-      alignItems: "center",
-
-      marginTop: 10,
-    },
-
-    cancelText: {
-      color: "#6e473b",
-
-      fontSize: 17,
-
-      fontWeight: "600",
     },
   });
