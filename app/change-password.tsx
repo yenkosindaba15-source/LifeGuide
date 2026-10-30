@@ -7,7 +7,9 @@ import {
   updatePassword,
 } from "firebase/auth";
 
-import { useState } from "react";
+import {
+  useState,
+} from "react";
 
 import {
   Alert,
@@ -30,6 +32,10 @@ import {
 import {
   auth,
 } from "../src/services/firebase";
+
+import {
+  validatePassword,
+} from "../src/utils/passwordValidation";
 
 export default function ChangePassword() {
   const [
@@ -67,6 +73,13 @@ export default function ChangePassword() {
     setUpdating,
   ] = useState(false);
 
+  const passwordValidation =
+    validatePassword(newPassword);
+
+  const showPasswordRequirements =
+    newPassword.length > 0 &&
+    !passwordValidation.isValid;
+
   const handleChangePassword =
     async () => {
       if (
@@ -83,23 +96,35 @@ export default function ChangePassword() {
       }
 
       if (
-        newPassword !==
-        confirmPassword
+        currentPassword ===
+        newPassword
       ) {
         Alert.alert(
-          "Password Mismatch",
-          "New passwords do not match."
+          "Choose a New Password",
+          "Your new password cannot be the same as your current password."
         );
 
         return;
       }
 
       if (
-        newPassword.length < 6
+        !passwordValidation.isValid
       ) {
         Alert.alert(
-          "Weak Password",
-          "Password must be at least 6 characters."
+          "Password Requirements",
+          "Please make sure your new password meets all the required security rules."
+        );
+
+        return;
+      }
+
+      if (
+        newPassword !==
+        confirmPassword
+      ) {
+        Alert.alert(
+          "Password Mismatch",
+          "The new password and confirmation password do not match."
         );
 
         return;
@@ -118,14 +143,16 @@ export default function ChangePassword() {
           !user.email
         ) {
           Alert.alert(
-            "Error",
-            "User not found."
+            "User Not Found",
+            "LifeGuide could not find the current user account."
           );
 
           return;
         }
 
         setUpdating(true);
+
+        Keyboard.dismiss();
 
         const credential =
           EmailAuthProvider.credential(
@@ -144,11 +171,17 @@ export default function ChangePassword() {
         );
 
         Alert.alert(
-          "Success",
-          "Password changed successfully."
-        );
+          "Password Updated",
+          "Your password was changed successfully.",
+          [
+            {
+              text: "OK",
 
-        router.back();
+              onPress: () =>
+                router.back(),
+            },
+          ]
+        );
       } catch (error: any) {
         console.log(
           "Password update error:",
@@ -176,9 +209,35 @@ export default function ChangePassword() {
           return;
         }
 
+        if (
+          code.includes(
+            "too-many-requests"
+          )
+        ) {
+          Alert.alert(
+            "Too Many Attempts",
+            "Access has been temporarily limited because of repeated attempts. Please try again later."
+          );
+
+          return;
+        }
+
+        if (
+          code.includes(
+            "network-request-failed"
+          )
+        ) {
+          Alert.alert(
+            "Connection Error",
+            "Please check your internet connection and try again."
+          );
+
+          return;
+        }
+
         Alert.alert(
-          "Error",
-          "Unable to change password. Please try again."
+          "Unable to Change Password",
+          "LifeGuide could not update your password. Please try again."
         );
       } finally {
         setUpdating(false);
@@ -225,6 +284,7 @@ export default function ChangePassword() {
                 style={
                   styles.backButton
                 }
+                disabled={updating}
                 onPress={() =>
                   router.back()
                 }
@@ -292,9 +352,7 @@ export default function ChangePassword() {
               <PasswordField
                 placeholder=
                   "New Password"
-                value={
-                  newPassword
-                }
+                value={newPassword}
                 onChangeText={
                   setNewPassword
                 }
@@ -309,6 +367,59 @@ export default function ChangePassword() {
                 }
                 editable={!updating}
               />
+
+              {showPasswordRequirements && (
+                <View
+                  style={
+                    styles.passwordRequirements
+                  }
+                >
+                  <Text
+                    style={
+                      styles.requirementsTitle
+                    }
+                  >
+                    Password still needs:
+                  </Text>
+
+                  {passwordValidation
+                    .missingRequirements
+                    .map(
+                      (
+                        requirement
+                      ) => (
+                        <Text
+                          key={
+                            requirement
+                          }
+                          style={
+                            styles.requirementText
+                          }
+                        >
+                          •{" "}
+                          {requirement}
+                        </Text>
+                      )
+                    )}
+                </View>
+              )}
+
+              {newPassword.length >
+                0 &&
+                currentPassword.length >
+                  0 &&
+                newPassword ===
+                  currentPassword && (
+                  <Text
+                    style={
+                      styles.samePasswordText
+                    }
+                  >
+                    • The new password must
+                    be different from your
+                    current password
+                  </Text>
+                )}
 
               <Text
                 style={styles.label}
@@ -335,7 +446,24 @@ export default function ChangePassword() {
                   )
                 }
                 editable={!updating}
+                onSubmitEditing={
+                  handleChangePassword
+                }
               />
+
+              {confirmPassword.length >
+                0 &&
+                newPassword !==
+                  confirmPassword && (
+                  <Text
+                    style={
+                      styles.mismatchText
+                    }
+                  >
+                    The passwords do not
+                    match.
+                  </Text>
+                )}
 
               <TouchableOpacity
                 style={[
@@ -370,12 +498,17 @@ export default function ChangePassword() {
 type PasswordFieldProps = {
   placeholder: string;
   value: string;
+
   onChangeText: (
     text: string
   ) => void;
+
   visible: boolean;
   onToggle: () => void;
   editable: boolean;
+
+  onSubmitEditing?:
+    () => void;
 };
 
 function PasswordField({
@@ -385,6 +518,7 @@ function PasswordField({
   visible,
   onToggle,
   editable,
+  onSubmitEditing,
 }: PasswordFieldProps) {
   return (
     <View
@@ -401,6 +535,15 @@ function PasswordField({
         onChangeText={onChangeText}
         editable={editable}
         autoCapitalize="none"
+        autoCorrect={false}
+        returnKeyType={
+          onSubmitEditing
+            ? "done"
+            : "next"
+        }
+        onSubmitEditing={
+          onSubmitEditing
+        }
       />
 
       <TouchableOpacity
@@ -538,6 +681,58 @@ const styles = StyleSheet.create({
     justifyContent: "center",
 
     alignItems: "center",
+  },
+
+  passwordRequirements: {
+    marginTop: -8,
+
+    marginBottom: 18,
+
+    paddingHorizontal: 4,
+  },
+
+  requirementsTitle: {
+    color: "#8b3a3a",
+
+    fontSize: 13,
+
+    fontWeight: "600",
+
+    marginBottom: 4,
+  },
+
+  requirementText: {
+    color: "#8b3a3a",
+
+    fontSize: 13,
+
+    lineHeight: 19,
+  },
+
+  samePasswordText: {
+    color: "#8b3a3a",
+
+    fontSize: 13,
+
+    lineHeight: 19,
+
+    marginTop: -8,
+
+    marginBottom: 18,
+
+    paddingHorizontal: 4,
+  },
+
+  mismatchText: {
+    color: "#8b3a3a",
+
+    fontSize: 13,
+
+    marginTop: -8,
+
+    marginBottom: 18,
+
+    paddingHorizontal: 4,
   },
 
   button: {
