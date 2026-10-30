@@ -1,13 +1,16 @@
 import { router } from "expo-router";
 
 import {
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
+
+import {
+  SafeAreaView,
+} from "react-native-safe-area-context";
 
 import {
   DAILY_CONTENT_START_DATE,
@@ -22,67 +25,73 @@ type VerseHistoryItem = {
 };
 
 export default function VerseHistory() {
-  const buildHistory = (): VerseHistoryItem[] => {
-    const history: VerseHistoryItem[] = [];
+  const buildHistory =
+    (): VerseHistoryItem[] => {
+      const history:
+        VerseHistoryItem[] = [];
 
-    const today = new Date();
+      const today = new Date();
 
-    const currentDate = new Date(
-      today.getFullYear(),
-      today.getMonth(),
-      today.getDate() - 1
-    );
-
-    const startDate = new Date(
-      DAILY_CONTENT_START_DATE.getFullYear(),
-      DAILY_CONTENT_START_DATE.getMonth(),
-      DAILY_CONTENT_START_DATE.getDate()
-    );
-
-    while (
-      currentDate.getTime() >=
-      startDate.getTime()
-    ) {
-      const content =
-        getDailyHomeContentForDate(
-          currentDate
+      const currentDate =
+        new Date(
+          today.getFullYear(),
+          today.getMonth(),
+          today.getDate() - 1
         );
 
-      history.push({
-        date:
-          currentDate.toLocaleDateString(
-            "en-GB",
-            {
-              day: "2-digit",
-              month: "short",
-              year: "numeric",
-            }
-          ),
+      const startDate =
+        new Date(
+          DAILY_CONTENT_START_DATE.getFullYear(),
+          DAILY_CONTENT_START_DATE.getMonth(),
+          DAILY_CONTENT_START_DATE.getDate()
+        );
 
-        theme: content.theme,
+      while (
+        currentDate.getTime() >=
+        startDate.getTime()
+      ) {
+        const content =
+          getDailyHomeContentForDate(
+            currentDate
+          );
 
-        verse: content.verse,
+        history.push({
+          date:
+            currentDate.toLocaleDateString(
+              "en-GB",
+              {
+                day: "2-digit",
+                month: "short",
+                year: "numeric",
+              }
+            ),
 
-        reference:
-          content.reference,
-      });
+          theme: content.theme,
 
-      currentDate.setDate(
-        currentDate.getDate() - 1
-      );
-    }
+          verse: content.verse,
 
-    return history;
-  };
+          reference:
+            content.reference,
+        });
 
-  const history = buildHistory();
+        currentDate.setDate(
+          currentDate.getDate() - 1
+        );
+      }
+
+      return history;
+    };
+
+  const history =
+    buildHistory();
 
   const openVerse = (
     reference: string
   ) => {
-    const match = reference.match(
-      /^(.*?)\s+(\d+):(\d+)$/
-    );
+    const match =
+      reference.match(
+        /^(.*?)\s+(\d+):(\d+)$/
+      );
 
     if (!match) {
       return;
@@ -94,7 +103,9 @@ export default function VerseHistory() {
 
       params: {
         book: match[1],
+
         chapter: match[2],
+
         targetVerse: match[3],
       },
     });
@@ -103,7 +114,44 @@ export default function VerseHistory() {
   return (
     <SafeAreaView
       style={styles.container}
+      edges={[
+        "top",
+        "left",
+        "right",
+        "bottom",
+      ]}
     >
+      <View
+        style={styles.header}
+      >
+        <TouchableOpacity
+          style={
+            styles.backButton
+          }
+          onPress={() =>
+            router.back()
+          }
+        >
+          <Text
+            style={styles.backText}
+          >
+            ‹
+          </Text>
+        </TouchableOpacity>
+
+        <Text
+          style={styles.title}
+        >
+          Verse History
+        </Text>
+
+        <View
+          style={
+            styles.headerSpace
+          }
+        />
+      </View>
+
       <ScrollView
         showsVerticalScrollIndicator={
           false
@@ -112,34 +160,11 @@ export default function VerseHistory() {
           styles.content
         }
       >
-        <View style={styles.header}>
-          <TouchableOpacity
-            style={
-              styles.backButton
-            }
-            onPress={() =>
-              router.back()
-            }
-          >
-            <Text
-              style={styles.backText}
-            >
-              ‹
-            </Text>
-          </TouchableOpacity>
-
-          <Text style={styles.title}>
-            Verse History
-          </Text>
-
-          <View
-            style={styles.headerSpace}
-          />
-        </View>
-
         {history.length === 0 ? (
           <View
-            style={styles.emptyCard}
+            style={
+              styles.emptyCard
+            }
           >
             <Text
               style={
@@ -150,7 +175,9 @@ export default function VerseHistory() {
             </Text>
 
             <Text
-              style={styles.emptyText}
+              style={
+                styles.emptyText
+              }
             >
               Previous Verse of the Day
               entries will appear here.
@@ -222,23 +249,23 @@ export default function VerseHistory() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+
     backgroundColor: "#e1d4c2",
   },
 
-  content: {
-    paddingHorizontal: 20,
-    paddingBottom: 60,
-  },
-
   header: {
-    minHeight: 105,
-    paddingTop: 35,
+    minHeight: 80,
+
+    paddingHorizontal: 20,
 
     flexDirection: "row",
+
     alignItems: "center",
 
     justifyContent:
       "space-between",
+
+    backgroundColor: "#e1d4c2",
   },
 
   backButton: {
@@ -246,12 +273,15 @@ const styles = StyleSheet.create({
     height: 50,
 
     justifyContent: "center",
+
     alignItems: "center",
   },
 
   backText: {
     fontSize: 55,
+
     color: "#6e473b",
+
     lineHeight: 45,
   },
 
@@ -259,6 +289,7 @@ const styles = StyleSheet.create({
     flex: 1,
 
     fontSize: 30,
+
     fontWeight: "bold",
 
     color: "#291c0e",
@@ -270,10 +301,19 @@ const styles = StyleSheet.create({
     width: 45,
   },
 
+  content: {
+    paddingHorizontal: 20,
+
+    paddingTop: 10,
+
+    paddingBottom: 60,
+  },
+
   card: {
     backgroundColor: "#f8f4ef",
 
     borderWidth: 1,
+
     borderColor: "#beb5a9",
 
     borderRadius: 16,
@@ -306,6 +346,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#e1d4c2",
 
     paddingHorizontal: 11,
+
     paddingVertical: 5,
 
     borderRadius: 14,
@@ -340,7 +381,7 @@ const styles = StyleSheet.create({
   },
 
   emptyCard: {
-    marginTop: 40,
+    marginTop: 30,
 
     backgroundColor: "#f8f4ef",
 

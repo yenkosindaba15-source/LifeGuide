@@ -1,13 +1,16 @@
 import { router } from "expo-router";
 
 import {
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
+
+import {
+  SafeAreaView,
+} from "react-native-safe-area-context";
 
 import {
   DAILY_CONTENT_START_DATE,
@@ -27,22 +30,23 @@ export default function DevotionalHistory() {
   const buildHistory =
     (): DevotionalHistoryItem[] => {
       const history:
-        DevotionalHistoryItem[] =
-        [];
+        DevotionalHistoryItem[] = [];
 
       const today = new Date();
 
-      const currentDate = new Date(
-        today.getFullYear(),
-        today.getMonth(),
-        today.getDate() - 1
-      );
+      const currentDate =
+        new Date(
+          today.getFullYear(),
+          today.getMonth(),
+          today.getDate() - 1
+        );
 
-      const startDate = new Date(
-        DAILY_CONTENT_START_DATE.getFullYear(),
-        DAILY_CONTENT_START_DATE.getMonth(),
-        DAILY_CONTENT_START_DATE.getDate()
-      );
+      const startDate =
+        new Date(
+          DAILY_CONTENT_START_DATE.getFullYear(),
+          DAILY_CONTENT_START_DATE.getMonth(),
+          DAILY_CONTENT_START_DATE.getDate()
+        );
 
       while (
         currentDate.getTime() >=
@@ -70,12 +74,9 @@ export default function DevotionalHistory() {
             ),
 
           theme: devotional.theme,
-
           title: devotional.title,
-
           reference:
             devotional.reference,
-
           devotionalIndex,
         });
 
@@ -92,123 +93,85 @@ export default function DevotionalHistory() {
   return (
     <SafeAreaView
       style={styles.container}
+      edges={[
+        "top",
+        "left",
+        "right",
+        "bottom",
+      ]}
     >
-      <ScrollView
-        showsVerticalScrollIndicator={
-          false
-        }
-        contentContainerStyle={
-          styles.content
-        }
-      >
-        <View style={styles.header}>
-          <TouchableOpacity
-            style={
-              styles.backButton
-            }
-            onPress={() =>
-              router.back()
-            }
-          >
-            <Text
-              style={styles.backText}
-            >
-              ‹
-            </Text>
-          </TouchableOpacity>
-
-          <Text style={styles.title}>
-            Devotional History
+      <View style={styles.header}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => router.back()}
+        >
+          <Text style={styles.backText}>
+            ‹
           </Text>
+        </TouchableOpacity>
 
-          <View
-            style={styles.headerSpace}
-          />
-        </View>
+        <Text style={styles.title}>
+          Devotional History
+        </Text>
 
+        <View style={styles.headerSpace} />
+      </View>
+
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.content}
+      >
         {history.length === 0 ? (
-          <View
-            style={styles.emptyCard}
-          >
-            <Text
-              style={
-                styles.emptyTitle
-              }
-            >
+          <View style={styles.emptyCard}>
+            <Text style={styles.emptyTitle}>
               No previous devotionals yet
             </Text>
 
-            <Text
-              style={styles.emptyText}
-            >
+            <Text style={styles.emptyText}>
               Previous daily devotionals
               will appear here.
             </Text>
           </View>
         ) : (
-          history.map(
-            (item, index) => (
-              <TouchableOpacity
-                key={`${item.date}-${index}`}
-                style={styles.card}
-                activeOpacity={0.75}
-                onPress={() =>
-                  router.push({
-                    pathname:
-                      "/devotional-details",
+          history.map((item, index) => (
+            <TouchableOpacity
+              key={`${item.date}-${index}`}
+              style={styles.card}
+              activeOpacity={0.75}
+              onPress={() =>
+                router.push({
+                  pathname:
+                    "/devotional-details",
 
-                    params: {
-                      index: String(
-                        item.devotionalIndex
-                      ),
-                    },
-                  })
-                }
-              >
-                <View
-                  style={
-                    styles.cardTopRow
-                  }
-                >
-                  <Text
-                    style={styles.date}
-                  >
-                    {item.date}
+                  params: {
+                    index: String(
+                      item.devotionalIndex
+                    ),
+                  },
+                })
+              }
+            >
+              <View style={styles.cardTopRow}>
+                <Text style={styles.date}>
+                  {item.date}
+                </Text>
+
+                <View style={styles.themeBadge}>
+                  <Text style={styles.themeText}>
+                    {item.theme}
                   </Text>
-
-                  <View
-                    style={
-                      styles.themeBadge
-                    }
-                  >
-                    <Text
-                      style={
-                        styles.themeText
-                      }
-                    >
-                      {item.theme}
-                    </Text>
-                  </View>
                 </View>
+              </View>
 
-                <Text
-                  style={
-                    styles.cardTitle
-                  }
-                >
-                  {item.title}
-                </Text>
+              <Text style={styles.cardTitle}>
+                {item.title}
+              </Text>
 
-                <Text
-                  style={
-                    styles.reference
-                  }
-                >
-                  {item.reference}
-                </Text>
-              </TouchableOpacity>
-            )
-          )
+              <Text style={styles.reference}>
+                {item.reference}
+              </Text>
+            </TouchableOpacity>
+          ))
         )}
       </ScrollView>
     </SafeAreaView>
@@ -221,47 +184,32 @@ const styles = StyleSheet.create({
     backgroundColor: "#e1d4c2",
   },
 
-  content: {
-    paddingHorizontal: 20,
-    paddingBottom: 60,
-  },
-
   header: {
-    minHeight: 105,
-    paddingTop: 35,
-
+    minHeight: 80,
+    paddingHorizontal: 20,
     flexDirection: "row",
     alignItems: "center",
-
-    justifyContent:
-      "space-between",
+    justifyContent: "space-between",
   },
 
   backButton: {
     width: 45,
     height: 50,
-
     justifyContent: "center",
     alignItems: "center",
   },
 
   backText: {
     fontSize: 55,
-
     color: "#6e473b",
-
     lineHeight: 45,
   },
 
   title: {
     flex: 1,
-
     fontSize: 28,
-
     fontWeight: "bold",
-
     color: "#291c0e",
-
     textAlign: "center",
   },
 
@@ -269,102 +217,78 @@ const styles = StyleSheet.create({
     width: 45,
   },
 
+  content: {
+    paddingHorizontal: 20,
+    paddingTop: 10,
+    paddingBottom: 60,
+  },
+
   card: {
     backgroundColor: "#f8f4ef",
-
     borderWidth: 1,
-
     borderColor: "#beb5a9",
-
     borderRadius: 16,
-
     padding: 18,
-
     marginBottom: 14,
   },
 
   cardTopRow: {
     flexDirection: "row",
-
-    justifyContent:
-      "space-between",
-
+    justifyContent: "space-between",
     alignItems: "center",
-
     marginBottom: 12,
   },
 
   date: {
     fontSize: 14,
-
     color: "#6e473b",
-
     fontWeight: "bold",
   },
 
   themeBadge: {
     backgroundColor: "#e1d4c2",
-
     paddingHorizontal: 11,
-
     paddingVertical: 5,
-
     borderRadius: 14,
   },
 
   themeText: {
     color: "#6e473b",
-
     fontSize: 12,
-
     fontWeight: "600",
   },
 
   cardTitle: {
     fontSize: 20,
-
     fontWeight: "bold",
-
     color: "#291c0e",
-
     marginBottom: 8,
   },
 
   reference: {
     fontSize: 16,
-
     color: "#6e473b",
   },
 
   emptyCard: {
-    marginTop: 40,
-
+    marginTop: 30,
     backgroundColor: "#f8f4ef",
-
     borderRadius: 16,
-
     padding: 25,
-
     alignItems: "center",
   },
 
   emptyTitle: {
     color: "#291c0e",
-
     fontSize: 20,
-
     fontWeight: "bold",
-
     marginBottom: 8,
   },
 
   emptyText: {
     color: "#6e473b",
-
     fontSize: 16,
-
     textAlign: "center",
-
     lineHeight: 24,
   },
 });

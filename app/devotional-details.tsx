@@ -4,7 +4,6 @@ import {
 } from "expo-router";
 
 import {
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
@@ -12,7 +11,13 @@ import {
   View,
 } from "react-native";
 
-import { dailyDevotionals } from "../data/dailyContent";
+import {
+  SafeAreaView,
+} from "react-native-safe-area-context";
+
+import {
+  dailyDevotionals,
+} from "../data/dailyContent";
 
 export default function DevotionalDetails() {
   const { index } =
@@ -20,106 +25,92 @@ export default function DevotionalDetails() {
       index?: string;
     }>();
 
-  const devotionalIndex = Number(
-    index ?? -1
-  );
+  const devotionalIndex =
+    Number(index ?? -1);
 
   const devotional =
-    dailyDevotionals[devotionalIndex];
-
-  if (!devotional) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.header}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => router.back()}
-          >
-            <Text style={styles.backText}>
-              ‹
-            </Text>
-          </TouchableOpacity>
-
-          <Text style={styles.headerTitle}>
-            Devotional
-          </Text>
-
-          <View style={styles.headerSpace} />
-        </View>
-
-        <View style={styles.errorCard}>
-          <Text style={styles.errorTitle}>
-            Devotional unavailable
-          </Text>
-
-          <Text style={styles.errorText}>
-            This devotional could not be
-            opened.
-          </Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
+    dailyDevotionals[
+      devotionalIndex
+    ];
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.content}
-      >
-        {/* Header */}
+    <SafeAreaView
+      style={styles.container}
+      edges={[
+        "top",
+        "left",
+        "right",
+        "bottom",
+      ]}
+    >
+      <View style={styles.header}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => router.back()}
+        >
+          <Text style={styles.backText}>
+            ‹
+          </Text>
+        </TouchableOpacity>
 
-        <View style={styles.header}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => router.back()}
-          >
-            <Text style={styles.backText}>
-              ‹
+        <Text style={styles.headerTitle}>
+          Devotional
+        </Text>
+
+        <View style={styles.headerSpace} />
+      </View>
+
+      {!devotional ? (
+        <View style={styles.errorContainer}>
+          <View style={styles.errorCard}>
+            <Text style={styles.errorTitle}>
+              Devotional unavailable
             </Text>
-          </TouchableOpacity>
 
-          <Text style={styles.headerTitle}>
-            Devotional
+            <Text style={styles.errorText}>
+              This devotional could not be
+              opened.
+            </Text>
+          </View>
+        </View>
+      ) : (
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.content}
+        >
+          <Text style={styles.title}>
+            {devotional.title}
           </Text>
 
-          <View style={styles.headerSpace} />
-        </View>
+          <Text style={styles.verse}>
+            “{devotional.verse}”
+          </Text>
 
-        {/* Devotional */}
+          <Text style={styles.reference}>
+            {devotional.reference}
+          </Text>
 
-        <Text style={styles.title}>
-          {devotional.title}
-        </Text>
+          <View style={styles.divider} />
 
-        <Text style={styles.verse}>
-          “{devotional.verse}”
-        </Text>
+          <Text style={styles.sectionTitle}>
+            Message
+          </Text>
 
-        <Text style={styles.reference}>
-          {devotional.reference}
-        </Text>
+          <Text style={styles.message}>
+            {devotional.message}
+          </Text>
 
-        <View style={styles.divider} />
+          <View style={styles.divider} />
 
-        <Text style={styles.sectionTitle}>
-          Message
-        </Text>
+          <Text style={styles.sectionTitle}>
+            Prayer
+          </Text>
 
-        <Text style={styles.message}>
-          {devotional.message}
-        </Text>
-
-        <View style={styles.divider} />
-
-        <Text style={styles.sectionTitle}>
-          Prayer
-        </Text>
-
-        <Text style={styles.prayer}>
-          {devotional.prayer}
-        </Text>
-      </ScrollView>
+          <Text style={styles.prayer}>
+            {devotional.prayer}
+          </Text>
+        </ScrollView>
+      )}
     </SafeAreaView>
   );
 }
@@ -130,14 +121,9 @@ const styles = StyleSheet.create({
     backgroundColor: "#e1d4c2",
   },
 
-  content: {
-    paddingHorizontal: 20,
-    paddingBottom: 60,
-  },
-
   header: {
-    minHeight: 100,
-    paddingTop: 30,
+    minHeight: 80,
+    paddingHorizontal: 20,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
@@ -168,12 +154,17 @@ const styles = StyleSheet.create({
     width: 45,
   },
 
+  content: {
+    paddingHorizontal: 20,
+    paddingTop: 15,
+    paddingBottom: 60,
+  },
+
   title: {
     fontSize: 34,
     fontWeight: "bold",
     color: "#291c0e",
     textAlign: "center",
-    marginTop: 15,
     marginBottom: 20,
   },
 
@@ -216,6 +207,11 @@ const styles = StyleSheet.create({
     color: "#291c0e",
     fontSize: 18,
     lineHeight: 31,
+  },
+
+  errorContainer: {
+    flex: 1,
+    justifyContent: "flex-start",
   },
 
   errorCard: {

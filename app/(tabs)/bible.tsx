@@ -12,6 +12,10 @@ import {
 } from "react-native";
 
 import {
+  SafeAreaView,
+} from "react-native-safe-area-context";
+
+import {
   NEW_TESTAMENT,
   OLD_TESTAMENT,
 } from "../../src/data/bibleBooks";
@@ -23,75 +27,105 @@ export default function Bible() {
   const normalizedSearch =
     searchText.trim().toLowerCase();
 
-  const filteredOldTestament = useMemo(() => {
-    if (!normalizedSearch) {
-      return OLD_TESTAMENT;
-    }
+  const filteredOldTestament =
+    useMemo(() => {
+      if (!normalizedSearch) {
+        return OLD_TESTAMENT;
+      }
 
-    return OLD_TESTAMENT.filter((book) =>
-      book
-        .toLowerCase()
-        .includes(normalizedSearch)
-    );
-  }, [normalizedSearch]);
+      return OLD_TESTAMENT.filter(
+        (book) =>
+          book
+            .toLowerCase()
+            .includes(
+              normalizedSearch
+            )
+      );
+    }, [normalizedSearch]);
 
-  const filteredNewTestament = useMemo(() => {
-    if (!normalizedSearch) {
-      return NEW_TESTAMENT;
-    }
+  const filteredNewTestament =
+    useMemo(() => {
+      if (!normalizedSearch) {
+        return NEW_TESTAMENT;
+      }
 
-    return NEW_TESTAMENT.filter((book) =>
-      book
-        .toLowerCase()
-        .includes(normalizedSearch)
-    );
-  }, [normalizedSearch]);
+      return NEW_TESTAMENT.filter(
+        (book) =>
+          book
+            .toLowerCase()
+            .includes(
+              normalizedSearch
+            )
+      );
+    }, [normalizedSearch]);
 
   const hasResults =
     filteredOldTestament.length > 0 ||
     filteredNewTestament.length > 0;
 
-  const openBook = (book: string) => {
+  const openBook = (
+    book: string
+  ) => {
     router.push({
       pathname: "/bible/[book]",
-      params: { book },
+      params: {
+        book,
+      },
     });
   };
 
-  const renderBook = (book: string) => (
+  const renderBook = (
+    book: string
+  ) => (
     <TouchableOpacity
       key={book}
       style={styles.bookCard}
-      onPress={() => openBook(book)}
+      activeOpacity={0.75}
+      onPress={() =>
+        openBook(book)
+      }
     >
-      <Text style={styles.bookText}>
+      <Text
+        style={styles.bookText}
+      >
         {book}
       </Text>
     </TouchableOpacity>
   );
 
   return (
-    <View style={styles.screen}>
-      <ScrollView
-        style={styles.container}
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
+    <SafeAreaView
+      style={styles.screen}
+      edges={[
+        "top",
+        "left",
+        "right",
+      ]}
+    >
+      <View
+        style={
+          styles.fixedHeaderArea
+        }
       >
-        {/* Header */}
+        <View style={styles.header}>
           <Text style={styles.title}>
             Holy Bible
           </Text>
+        </View>
 
-        {/* Search */}
-
-        <View style={styles.searchContainer}>
+        <View
+          style={
+            styles.searchContainer
+          }
+        >
           <TextInput
             style={styles.searchInput}
             placeholder="Search Bible book..."
             placeholderTextColor="#a78d78"
             value={searchText}
-            onChangeText={setSearchText}
+            onChangeText={
+              setSearchText
+            }
             autoCapitalize="none"
             autoCorrect={false}
             returnKeyType="search"
@@ -99,32 +133,71 @@ export default function Bible() {
 
           {searchText.length > 0 ? (
             <TouchableOpacity
-              onPress={() => setSearchText("")}
+              style={
+                styles.clearButton
+              }
+              onPress={() =>
+                setSearchText("")
+              }
             >
-              <Text style={styles.clearText}>
+              <Text
+                style={
+                  styles.clearText
+                }
+              >
                 ×
               </Text>
             </TouchableOpacity>
-          ):(
-            <Ionicons name="search" size={22} color="#6e473b" />
+          ) : (
+            <Ionicons
+              name="search"
+              size={22}
+              color="#6e473b"
+            />
           )}
         </View>
+      </View>
 
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={
+          styles.content
+        }
+        showsVerticalScrollIndicator={
+          false
+        }
+        keyboardShouldPersistTaps="handled"
+      >
         {normalizedSearch ? (
           <>
-            <Text style={styles.resultsText}>
+            <Text
+              style={
+                styles.resultsText
+              }
+            >
               Results for "
-              {searchText.trim()}
-              "
+              {searchText.trim()}"
             </Text>
 
             {!hasResults ? (
-              <View style={styles.emptyCard}>
-                <Text style={styles.emptyTitle}>
+              <View
+                style={
+                  styles.emptyCard
+                }
+              >
+                <Text
+                  style={
+                    styles.emptyTitle
+                  }
+                >
                   No Bible book found
                 </Text>
 
-                <Text style={styles.emptyText}>
+                <Text
+                  style={
+                    styles.emptyText
+                  }
+                >
                   Try searching for
                   "John", "Isa", or
                   "Sam".
@@ -132,8 +205,8 @@ export default function Bible() {
               </View>
             ) : (
               <>
-                {filteredOldTestament.length >
-                  0 && (
+                {filteredOldTestament
+                  .length > 0 && (
                   <>
                     <Text
                       style={
@@ -149,8 +222,8 @@ export default function Bible() {
                   </>
                 )}
 
-                {filteredNewTestament.length >
-                  0 && (
+                {filteredNewTestament
+                  .length > 0 && (
                   <>
                     <Text
                       style={
@@ -171,7 +244,9 @@ export default function Bible() {
         ) : (
           <>
             <Text
-              style={styles.sectionTitle}
+              style={
+                styles.sectionTitle
+              }
             >
               OLD TESTAMENT
             </Text>
@@ -181,7 +256,9 @@ export default function Bible() {
             )}
 
             <Text
-              style={styles.sectionTitle}
+              style={
+                styles.sectionTitle
+              }
             >
               NEW TESTAMENT
             </Text>
@@ -192,7 +269,7 @@ export default function Bible() {
           </>
         )}
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -202,38 +279,55 @@ const styles = StyleSheet.create({
     backgroundColor: "#e1d4c2",
   },
 
-  container: {
-    flex: 1,
+  fixedHeaderArea: {
+    backgroundColor: "#e1d4c2",
+
     paddingHorizontal: 20,
+
+    paddingBottom: 10,
   },
 
-  content: {
-    paddingBottom: 120,
+  header: {
+    minHeight: 75,
+
+    justifyContent: "center",
   },
 
   title: {
     fontSize: 34,
+
     fontWeight: "bold",
+
     color: "#291c0e",
+
     textAlign: "center",
-    marginTop: 60,
-    marginBottom: 30,
   },
 
   searchContainer: {
-    marginBottom: 35,
+    minHeight: 50,
+
     backgroundColor: "#f8f4ef",
+
     borderWidth: 2,
+
     borderColor: "#beb5a9",
+
     borderRadius: 25,
+
     flexDirection: "row",
+
     alignItems: "center",
+
     paddingHorizontal: 15,
   },
 
   searchInput: {
     flex: 1,
+
+    minHeight: 48,
+
     fontSize: 16,
+
     color: "#291c0e",
   },
 
@@ -248,52 +342,83 @@ const styles = StyleSheet.create({
 
   clearText: {
     fontSize: 26,
+
     color: "#6e473b",
+  },
+
+  container: {
+    flex: 1,
+
+    paddingHorizontal: 20,
+  },
+
+  content: {
+    paddingTop: 15,
+
+    paddingBottom: 120,
   },
 
   resultsText: {
     color: "#6e473b",
+
     marginBottom: 15,
   },
 
   sectionTitle: {
     fontSize: 20,
+
     letterSpacing: 2,
+
     color: "#6e473b",
+
     marginBottom: 15,
+
     marginTop: 20,
+
     fontWeight: "600",
   },
 
   bookCard: {
     backgroundColor: "#f8f4ef",
+
     borderRadius: 14,
+
     paddingVertical: 16,
+
     paddingHorizontal: 20,
+
     marginBottom: 10,
   },
 
   bookText: {
     fontSize: 18,
+
     color: "#291c0e",
   },
 
   emptyCard: {
     backgroundColor: "#f8f4ef",
+
     borderRadius: 16,
+
     padding: 25,
+
     alignItems: "center",
   },
 
   emptyTitle: {
     fontSize: 20,
+
     fontWeight: "bold",
+
     color: "#291c0e",
+
     marginBottom: 10,
   },
 
   emptyText: {
     color: "#6e473b",
+
     textAlign: "center",
   },
 });

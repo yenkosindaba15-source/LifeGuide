@@ -224,219 +224,209 @@ export default function Highlights() {
   };
 
   return (
-    <SafeAreaView
-      style={styles.container}
-      edges={[
-        "top",
-        "left",
-        "right",
-        "bottom",
-      ]}
-    >
-      <ScrollView
-        showsVerticalScrollIndicator={
-          false
-        }
-        contentContainerStyle={
-          styles.content
+  <SafeAreaView
+    style={styles.container}
+    edges={[
+      "top",
+      "left",
+      "right",
+      "bottom",
+    ]}
+  >
+    <View style={styles.header}>
+      <TouchableOpacity
+        style={styles.backButton}
+        onPress={() =>
+          router.back()
         }
       >
-        <View style={styles.header}>
-          <TouchableOpacity
-            style={
-              styles.backButton
-            }
-            onPress={() =>
-              router.back()
-            }
-          >
-            <Text
-              style={styles.backText}
-            >
-              ‹
-            </Text>
-          </TouchableOpacity>
+        <Text
+          style={styles.backText}
+        >
+          ‹
+        </Text>
+      </TouchableOpacity>
 
-          <Text
-            style={
-              styles.headerTitle
-            }
-          >
-            My Highlights
-          </Text>
+      <Text
+        style={styles.headerTitle}
+      >
+        My Highlights
+      </Text>
 
-          <View
-            style={styles.headerSpace}
+      <View
+        style={styles.headerSpace}
+      />
+    </View>
+
+    <View
+      style={styles.reportSummary}
+    >
+      <Text
+        style={styles.reportLabel}
+      >
+        Total Saved Highlights
+      </Text>
+
+      <Text
+        style={styles.reportValue}
+      >
+        {loading
+          ? "..."
+          : highlights.length}
+      </Text>
+    </View>
+
+    <ScrollView
+      showsVerticalScrollIndicator={
+        false
+      }
+      contentContainerStyle={
+        styles.content
+      }
+    >
+      <View
+        style={
+          styles.highlightsContainer
+        }
+      >
+        {loading ? (
+          <ActivityIndicator
+            size="large"
+            color="#6e473b"
           />
-        </View>
-
-        <View
-          style={
-            styles.reportSummary
-          }
-        >
-          <Text
-            style={
-              styles.reportLabel
-            }
-          >
-            Total Saved Highlights
-          </Text>
-
-          <Text
-            style={
-              styles.reportValue
-            }
-          >
-            {loading
-              ? "..."
-              : highlights.length}
-          </Text>
-        </View>
-
-        <View
-          style={
-            styles.highlightsContainer
-          }
-        >
-          {loading ? (
-            <ActivityIndicator
-              size="large"
-              color="#6e473b"
-            />
-          ) : highlights.length >
-            0 ? (
-            highlights.map(
-              (item) => (
+        ) : highlights.length >
+          0 ? (
+          highlights.map(
+            (item) => (
+              <View
+                key={item.id}
+                style={
+                  styles.highlightCard
+                }
+              >
                 <View
-                  key={item.id}
                   style={
-                    styles.highlightCard
+                    styles.cardHeader
                   }
                 >
-                  <View
+                  <Text
                     style={
-                      styles.cardHeader
+                      styles.reference
                     }
                   >
-                    <Text
-                      style={
-                        styles.reference
-                      }
-                    >
-                      {item.reference ||
-                        "Saved Verse"}
-                    </Text>
-
-                    <Text
-                      style={
-                        styles.savedDate
-                      }
-                    >
-                      {formatDate(
-                        item.savedAt
-                      )}
-                    </Text>
-                  </View>
-
-                  <Text
-                    style={styles.verse}
-                  >
-                    “{item.verse}”
+                    {item.reference ||
+                      "Saved Verse"}
                   </Text>
 
-                  <View
+                  <Text
                     style={
-                      styles.buttonRow
+                      styles.savedDate
                     }
                   >
-                    <TouchableOpacity
-                      style={
-                        styles.openButton
-                      }
-                      onPress={() =>
-                        openHighlight(
-                          item
-                        )
-                      }
-                    >
-                      <Text
-                        style={
-                          styles.openButtonText
-                        }
-                      >
-                        Open Verse
-                      </Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                      style={
-                        styles.deleteButton
-                      }
-                      onPress={() =>
-                        confirmDelete(
-                          item
-                        )
-                      }
-                    >
-                      <Text
-                        style={
-                          styles.deleteButtonText
-                        }
-                      >
-                        Remove
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
+                    {formatDate(
+                      item.savedAt
+                    )}
+                  </Text>
                 </View>
-              )
+
+                <Text
+                  style={styles.verse}
+                >
+                  “{item.verse}”
+                </Text>
+
+                <View
+                  style={
+                    styles.buttonRow
+                  }
+                >
+                  <TouchableOpacity
+                    style={
+                      styles.openButton
+                    }
+                    onPress={() =>
+                      openHighlight(
+                        item
+                      )
+                    }
+                  >
+                    <Text
+                      style={
+                        styles.openButtonText
+                      }
+                    >
+                      Open Verse
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={
+                      styles.deleteButton
+                    }
+                    onPress={() =>
+                      confirmDelete(
+                        item
+                      )
+                    }
+                  >
+                    <Text
+                      style={
+                        styles.deleteButtonText
+                      }
+                    >
+                      Remove
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
             )
-          ) : (
-            <View
-              style={styles.emptyCard}
+          )
+        ) : (
+          <View
+            style={styles.emptyCard}
+          >
+            <Text
+              style={
+                styles.emptyTitle
+              }
+            >
+              No saved highlights yet.
+            </Text>
+
+            <Text
+              style={
+                styles.emptyText
+              }
+            >
+              Save verses while reading
+              the Bible and they will
+              appear here.
+            </Text>
+
+            <TouchableOpacity
+              style={
+                styles.bibleButton
+              }
+              onPress={() =>
+                router.push(
+                  "/(tabs)/bible"
+                )
+              }
             >
               <Text
                 style={
-                  styles.emptyTitle
+                  styles.bibleButtonText
                 }
               >
-                No saved highlights yet.
+                Open Bible
               </Text>
-
-              <Text
-                style={
-                  styles.emptyText
-                }
-              >
-                Save verses while reading
-                the Bible and they will
-                appear here.
-              </Text>
-
-              <TouchableOpacity
-                style={
-                  styles.bibleButton
-                }
-                onPress={() =>
-                  router.push(
-                    "/(tabs)/bible"
-                  )
-                }
-              >
-                <Text
-                  style={
-                    styles.bibleButtonText
-                  }
-                >
-                  Open Bible
-                </Text>
-              </TouchableOpacity>
-            </View>
-          )}
-        </View>
-      </ScrollView>
-    </SafeAreaView>
-  );
+            </TouchableOpacity>
+          </View>
+        )}
+      </View>
+    </ScrollView>
+  </SafeAreaView>
+);
 }
 
 const getDateValue = (
@@ -506,8 +496,9 @@ const styles = StyleSheet.create({
   },
 
   content: {
+    paddingTop: 15,
     paddingBottom: 60,
-  },
+},
 
   header: {
     height: 70,
@@ -548,7 +539,8 @@ const styles = StyleSheet.create({
 
     minHeight: 66,
 
-    marginTop: 18,
+    marginTop: 5,
+    marginBottom: 5,
 
     paddingHorizontal: 18,
 
@@ -588,7 +580,7 @@ const styles = StyleSheet.create({
 
     alignSelf: "center",
 
-    marginTop: 22,
+    marginTop: 5,
   },
 
   highlightCard: {

@@ -173,227 +173,164 @@ export default function Profile() {
     `${profile.firstName} ${profile.lastName}`.trim();
 
   return (
-    <SafeAreaView
-      style={styles.container}
-      edges={[
-        "top",
-        "left",
-        "right",
-        "bottom",
-      ]}
-    >
-      <ScrollView
-        showsVerticalScrollIndicator={
-          false
-        }
-        contentContainerStyle={
-          styles.content
-        }
+  <SafeAreaView
+    style={styles.container}
+    edges={["top", "left", "right", "bottom"]}
+  >
+    <View style={styles.header}>
+      <TouchableOpacity
+        style={styles.backButton}
+        onPress={() => router.back()}
       >
-        <View style={styles.header}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() =>
-              router.back()
-            }
-          >
-            <Text
-              style={styles.backText}
-            >
-              ‹
-            </Text>
-          </TouchableOpacity>
+        <Text style={styles.backText}>
+          ‹
+        </Text>
+      </TouchableOpacity>
 
-          <Text
-            style={styles.headerTitle}
-          >
-            Profile
+      <Text style={styles.headerTitle}>
+        Profile
+      </Text>
+
+      <View style={styles.headerSpace} />
+    </View>
+
+    <ScrollView
+      showsVerticalScrollIndicator={false}
+      contentContainerStyle={styles.content}
+    >
+      <View style={styles.profileSection}>
+        <View style={styles.profileCircle}>
+          <Text style={styles.profileInitial}>
+            {profileInitial}
           </Text>
-
-          <View
-            style={styles.headerSpace}
-          />
         </View>
 
-        <View
-          style={
-            styles.profileSection
-          }
-        >
-          <View
-            style={
-              styles.profileCircle
-            }
-          >
-            <Text
-              style={
-                styles.profileInitial
-              }
-            >
-              {profileInitial}
+        <Text style={styles.name}>
+          {fullName || "LifeGuide User"}
+        </Text>
+
+        <Text style={styles.email}>
+          {profile.email}
+        </Text>
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>
+          ACCOUNT SUMMARY
+        </Text>
+
+        <View style={styles.card}>
+          <View style={styles.row}>
+            <Text style={styles.label}>
+              Name
+            </Text>
+
+            <Text style={styles.value}>
+              {fullName || "Not set"}
             </Text>
           </View>
 
-          <Text style={styles.name}>
-            {fullName ||
-              "LifeGuide User"}
-          </Text>
+          <View style={styles.divider} />
 
-          <Text style={styles.email}>
-            {profile.email}
-          </Text>
-        </View>
+          <View style={styles.row}>
+            <Text style={styles.label}>
+              Email
+            </Text>
 
-        <View style={styles.section}>
-          <Text
-            style={
-              styles.sectionTitle
-            }
-          >
-            ACCOUNT SUMMARY
-          </Text>
+            <Text
+              style={styles.value}
+              numberOfLines={2}
+            >
+              {profile.email}
+            </Text>
+          </View>
 
-          <View style={styles.card}>
-            <View style={styles.row}>
-              <Text style={styles.label}>
-                Name
-              </Text>
+          <View style={styles.divider} />
 
-              <Text style={styles.value}>
-                {fullName ||
-                  "Not set"}
-              </Text>
-            </View>
+          <View style={styles.row}>
+            <Text style={styles.label}>
+              Account Created
+            </Text>
 
-            <View
-              style={styles.divider}
-            />
-
-            <View style={styles.row}>
-              <Text style={styles.label}>
-                Email
-              </Text>
-
-              <Text
-                style={styles.value}
-                numberOfLines={2}
-              >
-                {profile.email}
-              </Text>
-            </View>
-
-            <View
-              style={styles.divider}
-            />
-
-            <View style={styles.row}>
-              <Text style={styles.label}>
-                Account Created
-              </Text>
-
-              <Text style={styles.value}>
-                {formatDate(
-                  profile.createdAt
-                )}
-              </Text>
-            </View>
+            <Text style={styles.value}>
+              {formatDate(profile.createdAt)}
+            </Text>
           </View>
         </View>
+      </View>
 
-        <View style={styles.section}>
-          <Text
-            style={
-              styles.sectionTitle
-            }
-          >
-            SETTINGS
-          </Text>
-
-          <TouchableOpacity
-            style={styles.option}
-            onPress={() =>
-              router.push(
-                "/edit-profile"
-              )
-            }
-          >
-            <Text
-              style={
-                styles.optionText
-              }
-            >
-              Edit Profile
-            </Text>
-
-            <Text style={styles.arrow}>
-              ›
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.option}
-            onPress={() =>
-              router.push(
-                "/change-password"
-              )
-            }
-          >
-            <Text
-              style={
-                styles.optionText
-              }
-            >
-              Change Password
-            </Text>
-
-            <Text style={styles.arrow}>
-              ›
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.option}
-            onPress={() =>
-              router.push(
-                "/delete-account"
-              )
-            }
-          >
-            <Text
-              style={[
-                styles.optionText,
-                styles.deleteOptionText,
-              ]}
-            >
-              Delete Account
-            </Text>
-
-            <Text
-              style={[
-                styles.arrow,
-                styles.deleteOptionText,
-              ]}
-            >
-              ›
-            </Text>
-          </TouchableOpacity>
-        </View>
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>
+          SETTINGS
+        </Text>
 
         <TouchableOpacity
-          style={
-            styles.logoutButton
+          style={styles.option}
+          onPress={() =>
+            router.push("/edit-profile")
           }
-          onPress={handleLogout}
         >
-          <Text
-            style={styles.logoutText}
-          >
-            LOG OUT
+          <Text style={styles.optionText}>
+            Edit Profile
+          </Text>
+
+          <Text style={styles.arrow}>
+            ›
           </Text>
         </TouchableOpacity>
-      </ScrollView>
-    </SafeAreaView>
-  );
+
+        <TouchableOpacity
+          style={styles.option}
+          onPress={() =>
+            router.push("/change-password")
+          }
+        >
+          <Text style={styles.optionText}>
+            Change Password
+          </Text>
+
+          <Text style={styles.arrow}>
+            ›
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.option}
+          onPress={() =>
+            router.push("/delete-account")
+          }
+        >
+          <Text
+            style={[
+              styles.optionText,
+              styles.deleteOptionText,
+            ]}
+          >
+            Delete Account
+          </Text>
+
+          <Text
+            style={[
+              styles.arrow,
+              styles.deleteOptionText,
+            ]}
+          >
+            ›
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      <TouchableOpacity
+        style={styles.logoutButton}
+        onPress={handleLogout}
+      >
+        <Text style={styles.logoutText}>
+          LOG OUT
+        </Text>
+      </TouchableOpacity>
+    </ScrollView>
+  </SafeAreaView>
+);
 }
 
 const styles = StyleSheet.create({
@@ -403,8 +340,9 @@ const styles = StyleSheet.create({
   },
 
   content: {
+    paddingTop: 10,
     paddingBottom: 50,
-  },
+},
 
   header: {
     height: 70,
@@ -413,8 +351,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
 
-    justifyContent:
-      "space-between",
+    justifyContent: "space-between",
   },
 
   backButton: {
