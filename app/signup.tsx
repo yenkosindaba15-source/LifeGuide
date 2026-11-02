@@ -1,5 +1,10 @@
-import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
+import {
+  Ionicons,
+} from "@expo/vector-icons";
+
+import {
+  router,
+} from "expo-router";
 
 import {
   doc,
@@ -37,6 +42,10 @@ import {
 } from "../src/services/firebase";
 
 import {
+  validateEmail,
+} from "../src/utils/emailValidation";
+
+import {
   validatePassword,
 } from "../src/utils/passwordValidation";
 
@@ -62,8 +71,18 @@ export default function Signup() {
   ] = useState("");
 
   const [
+    confirmPassword,
+    setConfirmPassword,
+  ] = useState("");
+
+  const [
     showPassword,
     setShowPassword,
+  ] = useState(false);
+
+  const [
+    showConfirmPassword,
+    setShowConfirmPassword,
   ] = useState(false);
 
   const [
@@ -74,9 +93,20 @@ export default function Signup() {
   const passwordValidation =
     validatePassword(password);
 
+  const emailValidation =
+    validateEmail(email);
+
+  const showEmailError =
+    email.length > 0 &&
+    !emailValidation.isValid;
+
   const showPasswordRequirements =
     password.length > 0 &&
     !passwordValidation.isValid;
+
+  const passwordsDoNotMatch =
+    confirmPassword.length > 0 &&
+    password !== confirmPassword;
 
   const getFriendlyErrorMessage = (
     error: any
@@ -121,101 +151,138 @@ export default function Signup() {
     return "LifeGuide could not create your account. Please try again.";
   };
 
-  const handleSignup = async () => {
-    const cleanedFirstName =
-      firstName.trim();
+  const handleSignup =
+    async () => {
+      const cleanedFirstName =
+        firstName.trim();
 
-    const cleanedLastName =
-      lastName.trim();
+      const cleanedLastName =
+        lastName.trim();
 
-    const cleanedEmail =
-      email.trim().toLowerCase();
+      const cleanedEmail =
+        email
+          .trim()
+          .toLowerCase();
 
-    if (
-      !cleanedFirstName ||
-      !cleanedLastName ||
-      !cleanedEmail ||
-      !password
-    ) {
-      Alert.alert(
-        "Missing Information",
-        "Please complete all fields."
-      );
-
-      return;
-    }
-
-    if (
-      !passwordValidation.isValid
-    ) {
-      Alert.alert(
-        "Password Requirements",
-        "Please make sure your password meets all the required security rules."
-      );
-
-      return;
-    }
-
-    if (isCreatingAccount) {
-      return;
-    }
-
-    try {
-      setIsCreatingAccount(true);
-
-      Keyboard.dismiss();
-
-      const userCredential =
-        await signup(
-          cleanedEmail,
-          password
-        );
-
-      await setDoc(
-        doc(
-          db,
-          "users",
-          userCredential.user.uid
-        ),
-        {
-          firstName:
-            cleanedFirstName,
-
-          lastName:
-            cleanedLastName,
-
-          email:
-            cleanedEmail,
-
-          createdAt:
-            new Date().toISOString(),
-        }
-      );
-
-      router.replace("/(tabs)");
-
-      setTimeout(() => {
+      if (
+        !cleanedFirstName ||
+        !cleanedLastName ||
+        !cleanedEmail ||
+        !password ||
+        !confirmPassword
+      ) {
         Alert.alert(
-          "Success",
-          "Account created successfully!"
+          "Missing Information",
+          "Please complete all fields."
         );
-      }, 300);
-    } catch (error: any) {
-      console.log(
-        "Signup error:",
-        error
-      );
 
-      Alert.alert(
-        "Signup Failed",
-        getFriendlyErrorMessage(
+        return;
+      }
+
+      const finalEmailValidation =
+        validateEmail(
+          cleanedEmail
+        );
+
+      if (
+        !finalEmailValidation.isValid
+      ) {
+        Alert.alert(
+          "Invalid Email",
+          finalEmailValidation.message
+        );
+
+        return;
+      }
+
+      if (
+        !passwordValidation.isValid
+      ) {
+        Alert.alert(
+          "Password Requirements",
+          "Please make sure your password meets all the required security rules."
+        );
+
+        return;
+      }
+
+      if (
+        password !==
+        confirmPassword
+      ) {
+        Alert.alert(
+          "Password Mismatch",
+          "The password and confirmation password do not match."
+        );
+
+        return;
+      }
+
+      if (isCreatingAccount) {
+        return;
+      }
+
+      try {
+        setIsCreatingAccount(true);
+
+        Keyboard.dismiss();
+
+        const userCredential =
+          await signup(
+            cleanedEmail,
+            password
+          );
+
+        await setDoc(
+          doc(
+            db,
+            "users",
+            userCredential.user.uid
+          ),
+          {
+            firstName:
+              cleanedFirstName,
+
+            lastName:
+              cleanedLastName,
+
+            email:
+              cleanedEmail,
+
+            createdAt:
+              new Date()
+                .toISOString(),
+          }
+        );
+
+        router.replace(
+          "/(tabs)"
+        );
+
+        setTimeout(() => {
+          Alert.alert(
+            "Success",
+            "Account created successfully!"
+          );
+        }, 300);
+      } catch (error: any) {
+        console.log(
+          "Signup error:",
           error
-        )
-      );
-    } finally {
-      setIsCreatingAccount(false);
-    }
-  };
+        );
+
+        Alert.alert(
+          "Signup Failed",
+          getFriendlyErrorMessage(
+            error
+          )
+        );
+      } finally {
+        setIsCreatingAccount(
+          false
+        );
+      }
+    };
 
   return (
     <SafeAreaView
@@ -228,7 +295,9 @@ export default function Signup() {
       ]}
     >
       <KeyboardAvoidingView
-        style={styles.keyboardView}
+        style={
+          styles.keyboardView
+        }
         behavior={
           Platform.OS === "ios"
             ? "padding"
@@ -236,11 +305,15 @@ export default function Signup() {
         }
       >
         <TouchableWithoutFeedback
-          onPress={Keyboard.dismiss}
+          onPress={
+            Keyboard.dismiss
+          }
           accessible={false}
         >
           <ScrollView
-            style={styles.container}
+            style={
+              styles.container
+            }
             contentContainerStyle={
               styles.content
             }
@@ -249,34 +322,53 @@ export default function Signup() {
             }
             keyboardShouldPersistTaps="handled"
           >
-            <View style={styles.side}>
+            <View
+              style={styles.side}
+            >
               <Text
-                style={styles.heading}
+                style={
+                  styles.heading
+                }
               >
                 Begin Your Journey.
               </Text>
 
-              <Text style={styles.verse}>
-                "They devoted themselves to
-                the apostles' teaching and to
-                fellowship, to the breaking
-                of bread and to prayer."
+              <Text
+                style={
+                  styles.verse
+                }
+              >
+                "They devoted themselves
+                to the apostles' teaching
+                and to fellowship, to the
+                breaking of bread and to
+                prayer."
               </Text>
 
               <Text
-                style={styles.reference}
+                style={
+                  styles.reference
+                }
               >
                 Acts 2:42
               </Text>
             </View>
 
-            <View style={styles.wrapper}>
-              <Text style={styles.title}>
+            <View
+              style={
+                styles.wrapper
+              }
+            >
+              <Text
+                style={styles.title}
+              >
                 Sign Up
               </Text>
 
               <View
-                style={styles.inputBox}
+                style={
+                  styles.inputBox
+                }
               >
                 <Text
                   style={styles.label}
@@ -301,7 +393,9 @@ export default function Signup() {
               </View>
 
               <View
-                style={styles.inputBox}
+                style={
+                  styles.inputBox
+                }
               >
                 <Text
                   style={styles.label}
@@ -326,7 +420,9 @@ export default function Signup() {
               </View>
 
               <View
-                style={styles.inputBox}
+                style={
+                  styles.inputBox
+                }
               >
                 <Text
                   style={styles.label}
@@ -337,9 +433,16 @@ export default function Signup() {
                 <TextInput
                   placeholder="you@email.com"
                   placeholderTextColor="#cccccc"
-                  style={styles.input}
+                  style={[
+                    styles.input,
+
+                    showEmailError &&
+                      styles.invalidInput,
+                  ]}
                   value={email}
-                  onChangeText={setEmail}
+                  onChangeText={
+                    setEmail
+                  }
                   autoCapitalize="none"
                   autoCorrect={false}
                   keyboardType="email-address"
@@ -348,10 +451,24 @@ export default function Signup() {
                     !isCreatingAccount
                   }
                 />
+
+                {showEmailError && (
+                  <Text
+                    style={
+                      styles.validationText
+                    }
+                  >
+                    {
+                      emailValidation.message
+                    }
+                  </Text>
+                )}
               </View>
 
               <View
-                style={styles.inputBox}
+                style={
+                  styles.inputBox
+                }
               >
                 <Text
                   style={styles.label}
@@ -379,12 +496,9 @@ export default function Signup() {
                     }
                     autoCapitalize="none"
                     autoCorrect={false}
-                    returnKeyType="done"
+                    returnKeyType="next"
                     editable={
                       !isCreatingAccount
-                    }
-                    onSubmitEditing={
-                      Keyboard.dismiss
                     }
                   />
 
@@ -451,6 +565,89 @@ export default function Signup() {
                 )}
               </View>
 
+              <View
+                style={
+                  styles.inputBox
+                }
+              >
+                <Text
+                  style={styles.label}
+                >
+                  Confirm Password
+                </Text>
+
+                <View
+                  style={[
+                    styles.passwordContainer,
+
+                    passwordsDoNotMatch &&
+                      styles.invalidInput,
+                  ]}
+                >
+                  <TextInput
+                    placeholder="Confirm Password"
+                    placeholderTextColor="#cccccc"
+                    style={
+                      styles.passwordInput
+                    }
+                    value={
+                      confirmPassword
+                    }
+                    onChangeText={
+                      setConfirmPassword
+                    }
+                    secureTextEntry={
+                      !showConfirmPassword
+                    }
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    returnKeyType="done"
+                    editable={
+                      !isCreatingAccount
+                    }
+                    onSubmitEditing={
+                      Keyboard.dismiss
+                    }
+                  />
+
+                  <TouchableOpacity
+                    style={
+                      styles.eyeButton
+                    }
+                    disabled={
+                      isCreatingAccount
+                    }
+                    onPress={() =>
+                      setShowConfirmPassword(
+                        (current) =>
+                          !current
+                      )
+                    }
+                  >
+                    <Ionicons
+                      name={
+                        showConfirmPassword
+                          ? "eye-off-outline"
+                          : "eye-outline"
+                      }
+                      size={23}
+                      color="#e1d4c2"
+                    />
+                  </TouchableOpacity>
+                </View>
+
+                {passwordsDoNotMatch && (
+                  <Text
+                    style={
+                      styles.validationText
+                    }
+                  >
+                    The passwords do not
+                    match.
+                  </Text>
+                )}
+              </View>
+
               <TouchableOpacity
                 style={[
                   styles.button,
@@ -458,7 +655,9 @@ export default function Signup() {
                   isCreatingAccount &&
                     styles.disabledButton,
                 ]}
-                onPress={handleSignup}
+                onPress={
+                  handleSignup
+                }
                 activeOpacity={0.8}
                 disabled={
                   isCreatingAccount
@@ -476,7 +675,9 @@ export default function Signup() {
               </TouchableOpacity>
 
               <View
-                style={styles.bottomRow}
+                style={
+                  styles.bottomRow
+                }
               >
                 <Text
                   style={
@@ -492,7 +693,9 @@ export default function Signup() {
                     isCreatingAccount
                   }
                   onPress={() =>
-                    router.push("/login")
+                    router.push(
+                      "/login"
+                    )
                   }
                 >
                   <Text
@@ -512,228 +715,192 @@ export default function Signup() {
   );
 }
 
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: "#6e473b",
-  },
-
-  keyboardView: {
-    flex: 1,
-    backgroundColor: "#6e473b",
-  },
-
-  container: {
-    flex: 1,
-    backgroundColor: "#6e473b",
-  },
-
-  content: {
-    flexGrow: 1,
-
-    paddingHorizontal: 25,
-
-    paddingTop: 35,
-
-    paddingBottom: 40,
-
-    justifyContent: "center",
-  },
-
-  side: {
-    marginBottom: 25,
-  },
-
-  heading: {
-    fontSize: 32,
-
-    fontWeight: "bold",
-
-    color: "#dac69b",
-
-    marginBottom: 12,
-  },
-
-  verse: {
-    fontSize: 17,
-
-    color: "#ffffff",
-
-    lineHeight: 27,
-  },
-
-  reference: {
-    marginTop: 10,
-
-    color: "#f5e6c5",
-
-    fontWeight: "bold",
-
-    fontStyle: "italic",
-
-    fontSize: 16,
-  },
-
-  wrapper: {
-    backgroundColor:
-      "rgba(255,255,255,0.08)",
-
-    paddingHorizontal: 22,
-
-    paddingVertical: 24,
-
-    borderRadius: 20,
-  },
-
-  title: {
-    textAlign: "center",
-
-    fontSize: 32,
-
-    color: "#e1d4c2",
-
-    fontWeight: "bold",
-
-    marginBottom: 18,
-  },
-
-  inputBox: {
-    marginBottom: 14,
-  },
-
-  label: {
-    color: "#e1d4c2",
-
-    marginBottom: 7,
-
-    fontSize: 15,
-  },
-
-  input: {
-    height: 48,
-
-    borderRadius: 12,
-
-    backgroundColor:
-      "rgba(255,255,255,0.12)",
-
-    paddingHorizontal: 15,
-
-    color: "#ffffff",
-
-    fontSize: 16,
-  },
-
-  passwordContainer: {
-    height: 48,
-
-    borderRadius: 12,
-
-    backgroundColor:
-      "rgba(255,255,255,0.12)",
-
-    flexDirection: "row",
-
-    alignItems: "center",
-  },
-
-  passwordInput: {
-    flex: 1,
-
-    height: "100%",
-
-    paddingLeft: 15,
-
-    paddingRight: 5,
-
-    color: "#ffffff",
-
-    fontSize: 16,
-  },
-
-  eyeButton: {
-    width: 48,
-
-    height: 48,
-
-    justifyContent: "center",
-
-    alignItems: "center",
-  },
-
-  passwordRequirements: {
-    marginTop: 8,
-
-    paddingHorizontal: 4,
-  },
-
-  requirementsTitle: {
-    color: "#f5d7ce",
-
-    fontSize: 13,
-
-    fontWeight: "600",
-
-    marginBottom: 4,
-  },
-
-  requirementText: {
-    color: "#f5d7ce",
-
-    fontSize: 13,
-
-    lineHeight: 19,
-  },
-
-  button: {
-    backgroundColor: "#e1d4c2",
-
-    minHeight: 48,
-
-    justifyContent: "center",
-
-    alignItems: "center",
-
-    borderRadius: 12,
-
-    marginTop: 5,
-
-    paddingHorizontal: 10,
-  },
-
-  disabledButton: {
-    opacity: 0.65,
-  },
-
-  buttonText: {
-    color: "#6d5530",
-
-    fontWeight: "bold",
-
-    fontSize: 18,
-
-    textAlign: "center",
-  },
-
-  bottomRow: {
-    flexDirection: "row",
-
-    justifyContent: "center",
-
-    alignItems: "center",
-
-    flexWrap: "wrap",
-
-    marginTop: 20,
-  },
-
-  bottomText: {
-    color: "#e1d4c2",
-  },
-
-  loginText: {
-    color: "#e1d4c2",
-
-    fontWeight: "bold",
-  },
-});
+const styles =
+  StyleSheet.create({
+    safeArea: {
+      flex: 1,
+      backgroundColor:
+        "#6e473b",
+    },
+
+    keyboardView: {
+      flex: 1,
+      backgroundColor:
+        "#6e473b",
+    },
+
+    container: {
+      flex: 1,
+      backgroundColor:
+        "#6e473b",
+    },
+
+    content: {
+      flexGrow: 1,
+      paddingHorizontal: 25,
+      paddingTop: 35,
+      paddingBottom: 40,
+      justifyContent: "center",
+    },
+
+    side: {
+      marginBottom: 25,
+    },
+
+    heading: {
+      fontSize: 32,
+      fontWeight: "bold",
+      color: "#dac69b",
+      marginBottom: 12,
+    },
+
+    verse: {
+      fontSize: 17,
+      color: "#ffffff",
+      lineHeight: 27,
+    },
+
+    reference: {
+      marginTop: 10,
+      color: "#f5e6c5",
+      fontWeight: "bold",
+      fontStyle: "italic",
+      fontSize: 16,
+    },
+
+    wrapper: {
+      backgroundColor:
+        "rgba(255,255,255,0.08)",
+      paddingHorizontal: 22,
+      paddingVertical: 24,
+      borderRadius: 20,
+    },
+
+    title: {
+      textAlign: "center",
+      fontSize: 32,
+      color: "#e1d4c2",
+      fontWeight: "bold",
+      marginBottom: 18,
+    },
+
+    inputBox: {
+      marginBottom: 14,
+    },
+
+    label: {
+      color: "#e1d4c2",
+      marginBottom: 7,
+      fontSize: 15,
+    },
+
+    input: {
+      height: 48,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor:
+        "transparent",
+      backgroundColor:
+        "rgba(255,255,255,0.12)",
+      paddingHorizontal: 15,
+      color: "#ffffff",
+      fontSize: 16,
+    },
+
+    passwordContainer: {
+      height: 48,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor:
+        "transparent",
+      backgroundColor:
+        "rgba(255,255,255,0.12)",
+      flexDirection: "row",
+      alignItems: "center",
+    },
+
+    passwordInput: {
+      flex: 1,
+      height: "100%",
+      paddingLeft: 15,
+      paddingRight: 5,
+      color: "#ffffff",
+      fontSize: 16,
+    },
+
+    eyeButton: {
+      width: 48,
+      height: 48,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+
+    invalidInput: {
+      borderColor: "#ffd0c7",
+    },
+
+    validationText: {
+      color: "#f5d7ce",
+      fontSize: 13,
+      lineHeight: 19,
+      marginTop: 7,
+      paddingHorizontal: 4,
+    },
+
+    passwordRequirements: {
+      marginTop: 8,
+      paddingHorizontal: 4,
+    },
+
+    requirementsTitle: {
+      color: "#f5d7ce",
+      fontSize: 13,
+      fontWeight: "600",
+      marginBottom: 4,
+    },
+
+    requirementText: {
+      color: "#f5d7ce",
+      fontSize: 13,
+      lineHeight: 19,
+    },
+
+    button: {
+      backgroundColor:
+        "#e1d4c2",
+      minHeight: 48,
+      justifyContent: "center",
+      alignItems: "center",
+      borderRadius: 12,
+      marginTop: 5,
+      paddingHorizontal: 10,
+    },
+
+    disabledButton: {
+      opacity: 0.65,
+    },
+
+    buttonText: {
+      color: "#6d5530",
+      fontWeight: "bold",
+      fontSize: 18,
+      textAlign: "center",
+    },
+
+    bottomRow: {
+      flexDirection: "row",
+      justifyContent: "center",
+      alignItems: "center",
+      flexWrap: "wrap",
+      marginTop: 20,
+    },
+
+    bottomText: {
+      color: "#e1d4c2",
+    },
+
+    loginText: {
+      color: "#e1d4c2",
+      fontWeight: "bold",
+    },
+  });
