@@ -41,6 +41,10 @@ import {
   db,
 } from "../../../src/services/firebase";
 
+import {
+  saveReadingHistory,
+} from "../../../src/services/readingHistoryService";
+
 type BibleVerse = {
   book_id?: string;
   book_name?: string;
@@ -138,6 +142,7 @@ export default function ChapterReader() {
   const loadChapter = async () => {
     try {
       setLoading(true);
+
       setErrorMessage("");
 
       const data =
@@ -148,9 +153,13 @@ export default function ChapterReader() {
 
       if (
         data?.verses &&
-        Array.isArray(data.verses)
+        Array.isArray(
+          data.verses
+        )
       ) {
-        setVerses(data.verses);
+        setVerses(
+          data.verses
+        );
 
         if (targetVerse) {
           const openedVerse =
@@ -160,7 +169,8 @@ export default function ChapterReader() {
               ) =>
                 Number(
                   verse.verse
-                ) === targetVerse
+                ) ===
+                targetVerse
             );
 
           if (openedVerse) {
@@ -227,7 +237,9 @@ export default function ChapterReader() {
                   Number(
                     highlight.chapter
                   ) ===
-                  Number(chapter);
+                  Number(
+                    chapter
+                  );
 
                 if (
                   sameBook &&
@@ -270,30 +282,49 @@ export default function ChapterReader() {
           return;
         }
 
-        await setDoc(
-          doc(
-            db,
-            "users",
-            user.uid,
-            "readingProgress",
-            "current"
+        const chapterNumber =
+          Number(chapter);
+
+        if (
+          Number.isNaN(
+            chapterNumber
+          )
+        ) {
+          return;
+        }
+
+        await Promise.all([
+          setDoc(
+            doc(
+              db,
+              "users",
+              user.uid,
+              "readingProgress",
+              "current"
+            ),
+            {
+              book,
+
+              chapter:
+                chapterNumber,
+
+              reference:
+                `${book} ${chapterNumber}`,
+
+              updatedAt:
+                serverTimestamp(),
+            },
+            {
+              merge: true,
+            }
           ),
-          {
+
+          saveReadingHistory(
+            user.uid,
             book,
-
-            chapter:
-              Number(chapter),
-
-            reference:
-              `${book} ${chapter}`,
-
-            updatedAt:
-              serverTimestamp(),
-          },
-          {
-            merge: true,
-          }
-        );
+            chapterNumber
+          ),
+        ]);
       } catch (error) {
         console.log(
           "Reading progress error:",
@@ -311,7 +342,9 @@ export default function ChapterReader() {
       );
 
     const pressedNumber =
-      Number(verse.verse);
+      Number(
+        verse.verse
+      );
 
     if (
       selectedVerse &&
@@ -434,7 +467,10 @@ export default function ChapterReader() {
   ) => {
     return `${bookName}-${chapterNumber}-${verseNumber}`
       .toLowerCase()
-      .replace(/\s+/g, "-")
+      .replace(
+        /\s+/g,
+        "-"
+      )
       .replace(
         /[^a-z0-9-]/g,
         ""
@@ -446,7 +482,9 @@ export default function ChapterReader() {
       const currentChapter =
         Number(chapter);
 
-      if (currentChapter <= 1) {
+      if (
+        currentChapter <= 1
+      ) {
         Alert.alert(
           "First Chapter",
           `You are already at the first chapter of ${book}.`
@@ -464,27 +502,31 @@ export default function ChapterReader() {
 
           chapter:
             String(
-              currentChapter - 1
+              currentChapter -
+                1
             ),
         },
       });
     };
 
-  const openNextChapter = () => {
-    router.replace({
-      pathname:
-        "/bible/chapter/[chapter]",
+  const openNextChapter =
+    () => {
+      router.replace({
+        pathname:
+          "/bible/chapter/[chapter]",
 
-      params: {
-        book,
+        params: {
+          book,
 
-        chapter:
-          String(
-            Number(chapter) + 1
-          ),
-      },
-    });
-  };
+          chapter:
+            String(
+              Number(
+                chapter
+              ) + 1
+            ),
+        },
+      });
+    };
 
   if (loading) {
     return (
@@ -505,9 +547,12 @@ export default function ChapterReader() {
         />
 
         <Text
-          style={styles.loadingText}
+          style={
+            styles.loadingText
+          }
         >
-          Loading {book} {chapter}...
+          Loading {book}{" "}
+          {chapter}...
         </Text>
       </SafeAreaView>
     );
@@ -521,7 +566,8 @@ export default function ChapterReader() {
       : null;
 
   const selectedVerseIsSaved =
-    selectedVerseNumber !== null &&
+    selectedVerseNumber !==
+      null &&
     savedVerseNumbers.includes(
       selectedVerseNumber
     );
@@ -535,7 +581,9 @@ export default function ChapterReader() {
         "right",
       ]}
     >
-      <View style={styles.header}>
+      <View
+        style={styles.header}
+      >
         <TouchableOpacity
           style={
             styles.backButton
@@ -545,24 +593,32 @@ export default function ChapterReader() {
           }
         >
           <Text
-            style={styles.backText}
+            style={
+              styles.backText
+            }
           >
             ‹
           </Text>
         </TouchableOpacity>
 
-        <Text style={styles.title}>
+        <Text
+          style={styles.title}
+        >
           {book} {chapter}
         </Text>
 
         <View
-          style={styles.headerSpace}
+          style={
+            styles.headerSpace
+          }
         />
       </View>
 
       <ScrollView
         ref={scrollViewRef}
-        style={styles.container}
+        style={
+          styles.container
+        }
         contentContainerStyle={[
           styles.content,
 
@@ -579,7 +635,8 @@ export default function ChapterReader() {
               styles.instruction
             }
           >
-            Tap a verse to select it
+            Tap a verse to
+            select it
           </Text>
         )}
 
@@ -601,7 +658,9 @@ export default function ChapterReader() {
               style={
                 styles.retryButton
               }
-              onPress={loadScreen}
+              onPress={
+                loadScreen
+              }
             >
               <Text
                 style={
@@ -756,8 +815,11 @@ export default function ChapterReader() {
                 styles.selectedReference
               }
             >
-              {book} {chapter}:
-              {selectedVerse.verse}
+              {book}{" "}
+              {chapter}:
+              {
+                selectedVerse.verse
+              }
             </Text>
 
             <Text
@@ -765,8 +827,8 @@ export default function ChapterReader() {
                 styles.selectedInstruction
               }
             >
-              Tap the verse again to
-              deselect it
+              Tap the verse again
+              to deselect it
             </Text>
           </View>
 
@@ -803,293 +865,324 @@ export default function ChapterReader() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: "#e1d4c2",
-  },
+const styles =
+  StyleSheet.create({
+    screen: {
+      flex: 1,
 
-  container: {
-    flex: 1,
-  },
+      backgroundColor:
+        "#e1d4c2",
+    },
 
-  content: {
-    paddingHorizontal: 20,
-    paddingTop: 5,
-    paddingBottom: 100,
-  },
+    container: {
+      flex: 1,
+    },
 
-  contentWithActionBar: {
-    paddingBottom: 200,
-  },
+    content: {
+      paddingHorizontal: 20,
 
-  loadingContainer: {
-    flex: 1,
-    backgroundColor: "#e1d4c2",
-    justifyContent: "center",
-    alignItems: "center",
-  },
+      paddingTop: 5,
 
-  loadingText: {
-    color: "#6e473b",
-    fontSize: 17,
-    marginTop: 15,
-  },
+      paddingBottom: 100,
+    },
 
-  header: {
-    minHeight: 80,
+    contentWithActionBar: {
+      paddingBottom: 200,
+    },
 
-    paddingHorizontal: 20,
+    loadingContainer: {
+      flex: 1,
 
-    flexDirection: "row",
+      backgroundColor:
+        "#e1d4c2",
 
-    alignItems: "center",
+      justifyContent:
+        "center",
 
-    justifyContent:
-      "space-between",
+      alignItems: "center",
+    },
 
-    backgroundColor: "#e1d4c2",
-  },
+    loadingText: {
+      color: "#6e473b",
 
-  backButton: {
-    width: 45,
-    height: 50,
+      fontSize: 17,
 
-    justifyContent: "center",
-    alignItems: "center",
-  },
+      marginTop: 15,
+    },
 
-  backText: {
-    fontSize: 55,
-    color: "#6e473b",
-    lineHeight: 45,
-  },
+    header: {
+      minHeight: 80,
 
-  title: {
-    flex: 1,
+      paddingHorizontal: 20,
 
-    fontSize: 30,
+      flexDirection: "row",
 
-    fontWeight: "bold",
+      alignItems: "center",
 
-    textAlign: "center",
+      justifyContent:
+        "space-between",
 
-    color: "#291c0e",
-  },
+      backgroundColor:
+        "#e1d4c2",
+    },
 
-  headerSpace: {
-    width: 45,
-  },
+    backButton: {
+      width: 45,
 
-  instruction: {
-    textAlign: "center",
+      height: 50,
 
-    fontSize: 14,
+      justifyContent:
+        "center",
 
-    color: "#6e473b",
+      alignItems: "center",
+    },
 
-    marginBottom: 25,
-  },
+    backText: {
+      fontSize: 55,
 
-  scripture: {
-    backgroundColor: "#f8f4ef",
+      color: "#6e473b",
 
-    borderRadius: 18,
+      lineHeight: 45,
+    },
 
-    paddingVertical: 12,
+    title: {
+      flex: 1,
 
-    paddingHorizontal: 8,
-  },
+      fontSize: 30,
 
-  verseRow: {
-    borderRadius: 10,
+      fontWeight: "bold",
 
-    paddingVertical: 9,
+      textAlign: "center",
 
-    paddingHorizontal: 10,
-  },
+      color: "#291c0e",
+    },
 
-  selectedVerseRow: {
-    backgroundColor: "#dac69b",
-  },
+    headerSpace: {
+      width: 45,
+    },
 
-  verseText: {
-    fontSize: 19,
+    instruction: {
+      textAlign: "center",
 
-    lineHeight: 32,
+      fontSize: 14,
 
-    color: "#291c0e",
-  },
+      color: "#6e473b",
 
-  verseNumber: {
-    fontSize: 14,
+      marginBottom: 25,
+    },
 
-    fontWeight: "bold",
+    scripture: {
+      backgroundColor:
+        "#f8f4ef",
 
-    color: "#6e473b",
-  },
+      borderRadius: 18,
 
-  selectedVerseNumber: {
-    color: "#291c0e",
-  },
+      paddingVertical: 12,
 
-  savedIndicator: {
-    alignSelf: "flex-end",
+      paddingHorizontal: 8,
+    },
 
-    color: "#6e473b",
+    verseRow: {
+      borderRadius: 10,
 
-    fontSize: 11,
+      paddingVertical: 9,
 
-    fontWeight: "bold",
+      paddingHorizontal: 10,
+    },
 
-    letterSpacing: 1,
+    selectedVerseRow: {
+      backgroundColor:
+        "#dac69b",
+    },
 
-    marginTop: 4,
-  },
+    verseText: {
+      fontSize: 19,
 
-  errorCard: {
-    backgroundColor: "#f8f4ef",
+      lineHeight: 32,
 
-    borderRadius: 16,
+      color: "#291c0e",
+    },
 
-    padding: 25,
+    verseNumber: {
+      fontSize: 14,
 
-    alignItems: "center",
+      fontWeight: "bold",
 
-    marginTop: 20,
-  },
+      color: "#6e473b",
+    },
 
-  errorText: {
-    color: "#6e473b",
+    selectedVerseNumber: {
+      color: "#291c0e",
+    },
 
-    fontSize: 17,
+    savedIndicator: {
+      alignSelf: "flex-end",
 
-    lineHeight: 26,
+      color: "#6e473b",
 
-    textAlign: "center",
-  },
+      fontSize: 11,
 
-  retryButton: {
-    backgroundColor: "#6e473b",
+      fontWeight: "bold",
 
-    borderRadius: 14,
+      letterSpacing: 1,
 
-    paddingVertical: 10,
+      marginTop: 4,
+    },
 
-    paddingHorizontal: 25,
+    errorCard: {
+      backgroundColor:
+        "#f8f4ef",
 
-    marginTop: 20,
-  },
+      borderRadius: 16,
 
-  retryButtonText: {
-    color: "#ffffff",
+      padding: 25,
 
-    fontSize: 16,
+      alignItems: "center",
 
-    fontWeight: "bold",
-  },
+      marginTop: 20,
+    },
 
-  chapterNavigation: {
-    flexDirection: "row",
+    errorText: {
+      color: "#6e473b",
 
-    gap: 12,
+      fontSize: 17,
 
-    marginTop: 25,
-  },
+      lineHeight: 26,
 
-  navigationButton: {
-    flex: 1,
+      textAlign: "center",
+    },
 
-    height: 48,
+    retryButton: {
+      backgroundColor:
+        "#6e473b",
 
-    backgroundColor: "#6e473b",
+      borderRadius: 14,
 
-    borderRadius: 16,
+      paddingVertical: 10,
 
-    justifyContent: "center",
+      paddingHorizontal: 25,
 
-    alignItems: "center",
-  },
+      marginTop: 20,
+    },
 
-  navigationButtonText: {
-    color: "#ffffff",
+    retryButtonText: {
+      color: "#ffffff",
 
-    fontSize: 16,
+      fontSize: 16,
 
-    fontWeight: "bold",
-  },
+      fontWeight: "bold",
+    },
 
-  actionBar: {
-    position: "absolute",
+    chapterNavigation: {
+      flexDirection: "row",
 
-    left: 0,
-    right: 0,
-    bottom: 0,
+      gap: 12,
 
-    minHeight: 92,
+      marginTop: 25,
+    },
 
-    backgroundColor: "#f8f4ef",
+    navigationButton: {
+      flex: 1,
 
-    borderTopWidth: 1,
+      height: 48,
 
-    borderTopColor: "#beb5a9",
+      backgroundColor:
+        "#6e473b",
 
-    paddingHorizontal: 20,
+      borderRadius: 16,
 
-    paddingTop: 14,
+      justifyContent:
+        "center",
 
-    flexDirection: "row",
+      alignItems: "center",
+    },
 
-    alignItems: "center",
-  },
+    navigationButtonText: {
+      color: "#ffffff",
 
-  selectedReferenceArea: {
-    flex: 1,
+      fontSize: 16,
 
-    paddingRight: 15,
-  },
+      fontWeight: "bold",
+    },
 
-  selectedReference: {
-    fontSize: 18,
+    actionBar: {
+      position: "absolute",
 
-    fontWeight: "bold",
+      left: 0,
 
-    color: "#291c0e",
-  },
+      right: 0,
 
-  selectedInstruction: {
-    fontSize: 12,
+      bottom: 0,
 
-    color: "#6e473b",
+      minHeight: 92,
 
-    marginTop: 3,
-  },
+      backgroundColor:
+        "#f8f4ef",
 
-  saveButton: {
-    minWidth: 100,
+      borderTopWidth: 1,
 
-    height: 48,
+      borderTopColor:
+        "#beb5a9",
 
-    backgroundColor: "#6e473b",
+      paddingHorizontal: 20,
 
-    borderRadius: 15,
+      paddingTop: 14,
 
-    justifyContent: "center",
+      flexDirection: "row",
 
-    alignItems: "center",
+      alignItems: "center",
+    },
 
-    paddingHorizontal: 20,
-  },
+    selectedReferenceArea: {
+      flex: 1,
 
-  savedButton: {
-    backgroundColor: "#8c7665",
-  },
+      paddingRight: 15,
+    },
 
-  saveButtonText: {
-    color: "#ffffff",
+    selectedReference: {
+      fontSize: 18,
 
-    fontSize: 17,
+      fontWeight: "bold",
 
-    fontWeight: "bold",
-  },
-});
+      color: "#291c0e",
+    },
+
+    selectedInstruction: {
+      fontSize: 12,
+
+      color: "#6e473b",
+
+      marginTop: 3,
+    },
+
+    saveButton: {
+      minWidth: 100,
+
+      height: 48,
+
+      backgroundColor:
+        "#6e473b",
+
+      borderRadius: 15,
+
+      justifyContent:
+        "center",
+
+      alignItems: "center",
+
+      paddingHorizontal: 20,
+    },
+
+    savedButton: {
+      backgroundColor:
+        "#8c7665",
+    },
+
+    saveButtonText: {
+      color: "#ffffff",
+
+      fontSize: 17,
+
+      fontWeight: "bold",
+    },
+  });
