@@ -1,4 +1,17 @@
+import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
+
+import {
+  EmailAuthProvider,
+  reauthenticateWithCredential,
+  verifyBeforeUpdateEmail,
+} from "firebase/auth";
+
+import {
+  doc,
+  getDoc,
+  updateDoc,
+} from "firebase/firestore";
 
 import {
   useEffect,
@@ -24,15 +37,13 @@ import {
 } from "react-native-safe-area-context";
 
 import {
-  doc,
-  getDoc,
-  updateDoc,
-} from "firebase/firestore";
-
-import {
   auth,
   db,
 } from "../src/services/firebase";
+
+import {
+  validateEmail,
+} from "../src/utils/emailValidation";
 
 export default function EditProfile() {
   const [
@@ -46,9 +57,50 @@ export default function EditProfile() {
   ] = useState("");
 
   const [
+    email,
+    setEmail,
+  ] = useState("");
+
+  const [
+    originalEmail,
+    setOriginalEmail,
+  ] = useState("");
+
+  const [
+    currentPassword,
+    setCurrentPassword,
+  ] = useState("");
+
+  const [
+    showCurrentPassword,
+    setShowCurrentPassword,
+  ] = useState(false);
+
+  const [
+    loading,
+    setLoading,
+  ] = useState(true);
+
+  const [
     saving,
     setSaving,
   ] = useState(false);
+
+  const cleanedEmail =
+    email.trim().toLowerCase();
+
+  const emailHasChanged =
+    cleanedEmail !==
+    originalEmail
+      .trim()
+      .toLowerCase();
+
+  const emailValidation =
+    validateEmail(email);
+
+  const showEmailError =
+    email.length > 0 &&
+    !emailValidation.isValid;
 
   useEffect(() => {
     loadProfile();
@@ -56,74 +108,202 @@ export default function EditProfile() {
 
   const loadProfile = async () => {
     try {
+      setLoading(true);
+
       const user =
         auth.currentUser;
 
       if (!user) {
+        Alert.alert(
+          "User Not Found",
+          "LifeGuide could not find the current user account."
+        );
+
         return;
       }
 
-      const snapshot =
-        await getDoc(
-          doc(
-            db,
-            "users",
-            user.uid
-          )
-        );
+      await user.reload();
+
+      const authenticationEmail = user.email ?.trim().toLowerCase() ?? "";
+
+      const userReference = doc(db, "users", user.uid);
+
+      const snapshot = await getDoc(userReference);
 
       if (snapshot.exists()) {
-        const data =
-          snapshot.data();
+        const data = snapshot.data();
 
-        setFirstName(
-          data.firstName || ""
-        );
+        const firestoreEmail = String(data.email ?? "").trim().toLowerCase();
 
-        setLastName(
-          data.lastName || ""
-        );
+        setFirstName(data.firstName || "");
+        setLastName(data.lastName || "");
+
+        if(authenticationEmail  && authenticationEmail !== firestoreEmail){
+          await updateDoc(userReference,{
+            email: authenticationEmail,
+          });
+        }
+
+        const acctiveEmail = authenticationEmail  || firestoreEmail;
+
+        setEmail(acctiveEmail);
+        setOriginalEmail(acctiveEmail);
+      } else{
+        setEmail(authenticationEmail);
+        setOriginalEmail(authenticationEmail);
       }
     } catch (error) {
-      console.log(
-        "Unable to load profile:",
-        error
-      );
+      console.log("Unable to load profile:", error);
+
+      Alert.alert("Unable to Load Profile", "LifeGuide could not load your profile information.");
+    } finally{
+      setLoading(false);
     }
   };
 
-  const saveProfile = async () => {
-    const cleanedFirstName =
-      firstName.trim();
-
-    const cleanedLastName =
-      lastName.trim();
+  const getFriendlyErrorMessage = (
+    error: any
+  ): string => {
+    const code =
+      String(
+        error?.code ?? ""
+      );
 
     if (
-      !cleanedFirstName ||
-      !cleanedLastName
+      code.includes(
+        "invalid-credential"
+      ) ||
+      code.includes(
+        "wrong-password"
+      )
+    ) {
+      return "The current password you entered is incorrect.";
+    }
+
+    if (
+      code.includes(
+        "email-already-in-use"
+      )
+    ) {
+      return "Another account already uses this email address.";
+    }
+
+    if (
+      code.includes(
+        "invalid-email"
+      )
+    ) {
+      return "Please enter a valid email address.";
+    }
+
+    if (
+      code.includes(
+        "requires-recent-login"
+      )
+    ) {
+      return "Please enter your current password and try again.";
+    }
+
+    if (
+      code.includes(
+        "too-many-requests"
+      )
+    ) {
+      return "Too many attempts were made. Please try again later.";
+    }
+
+    if (
+      code.includes(
+        "network-request-failed"
+      )
+    ) {
+      return "Please check your internet connection and try again.";
+    }
+
+    return "LifeGuide could not update your profile. Please try again.";
+  };
+
+  const saveProfile = async () => {
+  const cleanedFirstName =
+    firstName.trim();
+
+  const cleanedLastName =
+    lastName.trim();
+
+  if (
+    !cleanedFirstName ||
+    !cleanedLastName ||
+    !cleanedEmail
+  ) {
+    Alert.alert(
+      "Missing Information",
+      "Please enter your first name, last name and email address."
+    );
+
+    return;
+  }
+
+  const finalEmailValidation =
+    validateEmail(cleanedEmail);
+
+  if (
+    !finalEmailValidation.isValid
+  ) {
+    Alert.alert(
+      "Invalid Email",
+      finalEmailValidation.message
+    );
+
+    return;
+  }
+
+  if (
+    emailHasChanged &&
+    !currentPassword
+  ) {
+    Alert.alert(
+      "Current Password Required",
+      "Enter your current password before changing your login email."
+    );
+
+    return;
+  }
+
+  if (saving) {
+    return;
+  }
+
+  try {
+    const user =
+      auth.currentUser;
+
+    if (
+      !user ||
+      !user.email
     ) {
       Alert.alert(
-        "Missing Information",
-        "Please enter both your first name and last name."
+        "User Not Found",
+        "LifeGuide could not find the current user account."
       );
 
       return;
     }
 
-    if (saving) {
-      return;
-    }
+    setSaving(true);
 
-    try {
-      const user =
-        auth.currentUser;
+    Keyboard.dismiss();
 
-      if (!user) {
-        return;
-      }
+    if (emailHasChanged) {
+      const credential =
+        EmailAuthProvider.credential(
+          user.email,
+          currentPassword
+        );
 
-      setSaving(true);
+      await reauthenticateWithCredential(
+        user,
+        credential
+      );
 
       await updateDoc(
         doc(
@@ -137,29 +317,79 @@ export default function EditProfile() {
 
           lastName:
             cleanedLastName,
+
+          email:
+            user.email,
         }
       );
 
-      Alert.alert(
-        "Success",
-        "Profile updated."
-      );
-
-      router.back();
-    } catch (error) {
-      console.log(
-        "Unable to update profile:",
-        error
+      await verifyBeforeUpdateEmail(
+        user,
+        cleanedEmail
       );
 
       Alert.alert(
-        "Error",
-        "Unable to update profile."
+        "Verify Your New Email",
+        `A verification link was sent to ${cleanedEmail}. Open the link to complete the email change. Continue using ${user.email} to log in until the new email has been verified.`,
+        [
+          {
+            text: "OK",
+
+            onPress: () =>
+              router.back(),
+          },
+        ]
       );
-    } finally {
-      setSaving(false);
+
+      return;
     }
-  };
+
+    await updateDoc(
+      doc(
+        db,
+        "users",
+        user.uid
+      ),
+      {
+        firstName:
+          cleanedFirstName,
+
+        lastName:
+          cleanedLastName,
+
+        email:
+          user.email,
+      }
+    );
+
+    Alert.alert(
+      "Profile Updated",
+      "Your profile was updated successfully.",
+      [
+        {
+          text: "OK",
+
+          onPress: () =>
+            router.back(),
+        },
+      ]
+    );
+  } catch (error: any) {
+    console.log(
+      "Unable to update profile:",
+      error
+    );
+
+    Alert.alert(
+      "Unable to Update Profile",
+      getFriendlyErrorMessage(
+        error
+      )
+    );
+  } finally {
+    setSaving(false);
+  }
+};
 
   return (
     <SafeAreaView
@@ -192,13 +422,12 @@ export default function EditProfile() {
             }
             keyboardShouldPersistTaps="handled"
           >
-            <View
-              style={styles.header}
-            >
+            <View style={styles.header}>
               <TouchableOpacity
                 style={
                   styles.backButton
                 }
+                disabled={saving}
                 onPress={() =>
                   router.back()
                 }
@@ -230,9 +459,7 @@ export default function EditProfile() {
                 styles.formContainer
               }
             >
-              <Text
-                style={styles.label}
-              >
+              <Text style={styles.label}>
                 First Name
               </Text>
 
@@ -244,13 +471,15 @@ export default function EditProfile() {
                 onChangeText={
                   setFirstName
                 }
-                editable={!saving}
+                editable={
+                  !saving &&
+                  !loading
+                }
+                autoCapitalize="words"
                 returnKeyType="next"
               />
 
-              <Text
-                style={styles.label}
-              >
+              <Text style={styles.label}>
                 Last Name
               </Text>
 
@@ -262,21 +491,158 @@ export default function EditProfile() {
                 onChangeText={
                   setLastName
                 }
-                editable={!saving}
-                returnKeyType="done"
+                editable={
+                  !saving &&
+                  !loading
+                }
+                autoCapitalize="words"
+                returnKeyType="next"
+              />
+
+              <Text style={styles.label}>
+                Email
+              </Text>
+
+              <TextInput
+                style={[
+                  styles.input,
+
+                  showEmailError &&
+                    styles.invalidInput,
+                ]}
+                placeholder="you@email.com"
+                placeholderTextColor="#8c7665"
+                value={email}
+                onChangeText={setEmail}
+                editable={
+                  !saving &&
+                  !loading
+                }
+                autoCapitalize="none"
+                autoCorrect={false}
+                keyboardType="email-address"
+                returnKeyType={
+                  emailHasChanged
+                    ? "next"
+                    : "done"
+                }
                 onSubmitEditing={
-                  Keyboard.dismiss
+                  emailHasChanged
+                    ? undefined
+                    : Keyboard.dismiss
                 }
               />
+
+              {showEmailError && (
+                <Text
+                  style={
+                    styles.validationText
+                  }
+                >
+                  {
+                    emailValidation.message
+                  }
+                </Text>
+              )}
+
+              <Text
+                style={
+                  styles.emailNotice
+                }
+              >
+                Changing this email will
+                also change the email
+                address you use to sign in.
+              </Text>
+
+              {emailHasChanged && (
+                <>
+                  <Text
+                    style={
+                      styles.label
+                    }
+                  >
+                    Current Password
+                  </Text>
+
+                  <View
+                    style={
+                      styles.passwordContainer
+                    }
+                  >
+                    <TextInput
+                      style={
+                        styles.passwordInput
+                      }
+                      placeholder="Enter current password"
+                      placeholderTextColor="#8c7665"
+                      value={
+                        currentPassword
+                      }
+                      onChangeText={
+                        setCurrentPassword
+                      }
+                      secureTextEntry={
+                        !showCurrentPassword
+                      }
+                      editable={!saving}
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                      returnKeyType="done"
+                      onSubmitEditing={
+                        Keyboard.dismiss
+                      }
+                    />
+
+                    <TouchableOpacity
+                      style={
+                        styles.eyeButton
+                      }
+                      disabled={saving}
+                      onPress={() =>
+                        setShowCurrentPassword(
+                          (current) =>
+                            !current
+                        )
+                      }
+                    >
+                      <Ionicons
+                        name={
+                          showCurrentPassword
+                            ? "eye-off-outline"
+                            : "eye-outline"
+                        }
+                        size={23}
+                        color="#6e473b"
+                      />
+                    </TouchableOpacity>
+                  </View>
+
+                  <Text
+                    style={
+                      styles.passwordNotice
+                    }
+                  >
+                    Your current password
+                    is required to protect
+                    your account before the
+                    login email is changed.
+                  </Text>
+                </>
+              )}
 
               <TouchableOpacity
                 style={[
                   styles.button,
 
-                  saving &&
+                  (saving ||
+                    loading) &&
                     styles.disabledButton,
                 ]}
-                disabled={saving}
+                disabled={
+                  saving ||
+                  loading
+                }
                 onPress={saveProfile}
               >
                 <Text
@@ -284,9 +650,11 @@ export default function EditProfile() {
                     styles.buttonText
                   }
                 >
-                  {saving
-                    ? "Saving..."
-                    : "Save Changes"}
+                  {loading
+                    ? "Loading..."
+                    : saving
+                      ? "Saving..."
+                      : "Save Changes"}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -297,119 +665,223 @@ export default function EditProfile() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#e1d4c2",
-  },
+const styles =
+  StyleSheet.create({
+    container: {
+      flex: 1,
 
-  keyboardView: {
-    flex: 1,
-  },
+      backgroundColor:
+        "#e1d4c2",
+    },
 
-  content: {
-    flexGrow: 1,
-    paddingHorizontal: 20,
-    paddingBottom: 35,
-  },
+    keyboardView: {
+      flex: 1,
+    },
 
-  header: {
-    minHeight: 80,
+    content: {
+      flexGrow: 1,
 
-    flexDirection: "row",
+      paddingHorizontal: 20,
 
-    alignItems: "center",
+      paddingBottom: 35,
+    },
 
-    justifyContent:
-      "space-between",
-  },
+    header: {
+      minHeight: 80,
 
-  backButton: {
-    width: 45,
-    height: 50,
+      flexDirection: "row",
 
-    justifyContent: "center",
-    alignItems: "center",
-  },
+      alignItems: "center",
 
-  backText: {
-    fontSize: 55,
-    color: "#6e473b",
-    lineHeight: 45,
-  },
+      justifyContent:
+        "space-between",
+    },
 
-  title: {
-    flex: 1,
+    backButton: {
+      width: 45,
+      height: 50,
 
-    fontSize: 30,
+      justifyContent: "center",
 
-    fontWeight: "bold",
+      alignItems: "center",
+    },
 
-    color: "#291c0e",
+    backText: {
+      fontSize: 55,
 
-    textAlign: "center",
-  },
+      color: "#6e473b",
 
-  headerSpace: {
-    width: 45,
-  },
+      lineHeight: 45,
+    },
 
-  formContainer: {
-    marginTop: 25,
-  },
+    title: {
+      flex: 1,
 
-  label: {
-    color: "#6e473b",
+      fontSize: 30,
 
-    fontSize: 16,
+      fontWeight: "bold",
 
-    fontWeight: "600",
+      color: "#291c0e",
 
-    marginBottom: 8,
-  },
+      textAlign: "center",
+    },
 
-  input: {
-    minHeight: 52,
+    headerSpace: {
+      width: 45,
+    },
 
-    backgroundColor: "#ffffff",
+    formContainer: {
+      marginTop: 25,
+    },
 
-    borderWidth: 1,
-    borderColor: "#beb5a9",
+    label: {
+      color: "#6e473b",
 
-    borderRadius: 12,
+      fontSize: 16,
 
-    paddingHorizontal: 15,
+      fontWeight: "600",
 
-    fontSize: 16,
+      marginBottom: 8,
+    },
 
-    color: "#291c0e",
+    input: {
+      minHeight: 52,
 
-    marginBottom: 18,
-  },
+      backgroundColor:
+        "#ffffff",
 
-  button: {
-    marginTop: 8,
+      borderWidth: 1,
 
-    minHeight: 52,
+      borderColor:
+        "#beb5a9",
 
-    backgroundColor: "#6e473b",
+      borderRadius: 12,
 
-    borderRadius: 14,
+      paddingHorizontal: 15,
 
-    justifyContent: "center",
+      fontSize: 16,
 
-    alignItems: "center",
-  },
+      color: "#291c0e",
 
-  disabledButton: {
-    opacity: 0.65,
-  },
+      marginBottom: 18,
+    },
 
-  buttonText: {
-    color: "#ffffff",
+    invalidInput: {
+      borderColor: "#c62828",
 
-    fontWeight: "bold",
+      marginBottom: 6,
+    },
 
-    fontSize: 18,
-  },
-});
+    validationText: {
+      color: "#c62828",
+
+      fontSize: 13,
+
+      lineHeight: 19,
+
+      marginBottom: 14,
+
+      paddingHorizontal: 4,
+    },
+
+    emailNotice: {
+      color: "#6e473b",
+
+      fontSize: 13,
+
+      lineHeight: 20,
+
+      marginTop: -8,
+
+      marginBottom: 18,
+
+      paddingHorizontal: 4,
+    },
+
+    passwordContainer: {
+      height: 52,
+
+      backgroundColor:
+        "#ffffff",
+
+      borderWidth: 1,
+
+      borderColor:
+        "#beb5a9",
+
+      borderRadius: 12,
+
+      flexDirection: "row",
+
+      alignItems: "center",
+    },
+
+    passwordInput: {
+      flex: 1,
+
+      height: "100%",
+
+      paddingLeft: 15,
+
+      paddingRight: 5,
+
+      color: "#291c0e",
+
+      fontSize: 16,
+    },
+
+    eyeButton: {
+      width: 50,
+
+      height: 52,
+
+      justifyContent: "center",
+
+      alignItems: "center",
+    },
+
+    passwordNotice: {
+      color: "#6e473b",
+
+      fontSize: 13,
+
+      lineHeight: 20,
+
+      marginTop: 8,
+
+      marginBottom: 18,
+
+      paddingHorizontal: 4,
+    },
+
+    button: {
+      marginTop: 8,
+
+      minHeight: 52,
+
+      backgroundColor:
+        "#6e473b",
+
+      borderRadius: 14,
+
+      justifyContent: "center",
+
+      alignItems: "center",
+
+      paddingHorizontal: 15,
+    },
+
+    disabledButton: {
+      opacity: 0.65,
+    },
+
+    buttonText: {
+      color: "#ffffff",
+
+      fontWeight: "bold",
+
+      fontSize: 18,
+
+      textAlign: "center",
+    },
+  });

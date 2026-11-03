@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
+
 import { useState } from "react";
 
 import {
@@ -25,11 +26,15 @@ import {
 } from "../src/services/authService";
 
 export default function Login() {
-  const [email, setEmail] =
-    useState("");
+  const [
+    email,
+    setEmail,
+  ] = useState("");
 
-  const [password, setPassword] =
-    useState("");
+  const [
+    password,
+    setPassword,
+  ] = useState("");
 
   const [
     showPassword,
@@ -41,50 +46,107 @@ export default function Login() {
     setIsLoggingIn,
   ] = useState(false);
 
-  const handleLogin = async () => {
-    const cleanedEmail =
-      email.trim();
+  const getFriendlyErrorMessage = (
+    error: any
+  ): string => {
+    const code =
+      String(
+        error?.code ?? ""
+      );
 
     if (
-      !cleanedEmail ||
-      !password.trim()
+      code.includes(
+        "invalid-credential"
+      ) ||
+      code.includes(
+        "wrong-password"
+      ) ||
+      code.includes(
+        "user-not-found"
+      )
     ) {
-      Alert.alert(
-        "Missing Information",
-        "Enter your email address and password."
-      );
-
-      return;
+      return "The email or password is incorrect.";
     }
 
-    if (isLoggingIn) {
-      return;
+    if (
+      code.includes(
+        "invalid-email"
+      )
+    ) {
+      return "Please enter a valid email address.";
     }
 
-    try {
-      setIsLoggingIn(true);
-
-      await login(
-        cleanedEmail,
-        password
-      );
-
-      Alert.alert(
-        "Success",
-        "Logged in successfully!"
-      );
-
-      router.replace("/(tabs)");
-    } catch (error: any) {
-      Alert.alert(
-        "Login Failed",
-        error?.message ||
-          "Unable to log in."
-      );
-    } finally {
-      setIsLoggingIn(false);
+    if (
+      code.includes(
+        "too-many-requests"
+      )
+    ) {
+      return "Too many login attempts were made. Please try again later.";
     }
+
+    if (
+      code.includes(
+        "network-request-failed"
+      )
+    ) {
+      return "Unable to connect. Please check your internet connection and try again.";
+    }
+
+    return "LifeGuide could not log you in. Please try again.";
   };
+
+  const handleLogin =
+    async () => {
+      const cleanedEmail =
+        email
+          .trim()
+          .toLowerCase();
+
+      if (
+        !cleanedEmail ||
+        !password
+      ) {
+        Alert.alert(
+          "Missing Information",
+          "Please enter your email and password."
+        );
+
+        return;
+      }
+
+      if (isLoggingIn) {
+        return;
+      }
+
+      try {
+        setIsLoggingIn(true);
+
+        Keyboard.dismiss();
+
+        await login(
+          cleanedEmail,
+          password
+        );
+
+        router.replace(
+          "/(tabs)"
+        );
+      } catch (error: any) {
+        console.log(
+          "Login error:",
+          error
+        );
+
+        Alert.alert(
+          "Login Failed",
+          getFriendlyErrorMessage(
+            error
+          )
+        );
+      } finally {
+        setIsLoggingIn(false);
+      }
+    };
 
   return (
     <SafeAreaView
@@ -107,11 +169,15 @@ export default function Login() {
         }
       >
         <TouchableWithoutFeedback
-          onPress={Keyboard.dismiss}
+          onPress={
+            Keyboard.dismiss
+          }
           accessible={false}
         >
           <ScrollView
-            style={styles.container}
+            style={
+              styles.container
+            }
             contentContainerStyle={
               styles.content
             }
@@ -120,9 +186,13 @@ export default function Login() {
             }
             keyboardShouldPersistTaps="handled"
           >
-            <View style={styles.side}>
+            <View
+              style={styles.side}
+            >
               <Text
-                style={styles.heading}
+                style={
+                  styles.heading
+                }
               >
                 Welcome Back.
               </Text>
@@ -130,9 +200,9 @@ export default function Login() {
               <Text
                 style={styles.verse}
               >
-                "In the beginning was the
-                Word, and the Word was with
-                God, and the Word was God."
+                "Your word is a lamp for
+                my feet, a light on my
+                path."
               </Text>
 
               <Text
@@ -140,17 +210,25 @@ export default function Login() {
                   styles.reference
                 }
               >
-                John 1:1
+                Psalm 119:105
               </Text>
             </View>
 
-            <View style={styles.wrapper}>
-              <Text style={styles.title}>
+            <View
+              style={
+                styles.wrapper
+              }
+            >
+              <Text
+                style={styles.title}
+              >
                 Login
               </Text>
 
               <View
-                style={styles.inputBox}
+                style={
+                  styles.inputBox
+                }
               >
                 <Text
                   style={styles.label}
@@ -163,17 +241,23 @@ export default function Login() {
                   placeholderTextColor="#cccccc"
                   style={styles.input}
                   value={email}
-                  onChangeText={setEmail}
+                  onChangeText={
+                    setEmail
+                  }
                   autoCapitalize="none"
                   autoCorrect={false}
                   keyboardType="email-address"
                   returnKeyType="next"
-                  editable={!isLoggingIn}
+                  editable={
+                    !isLoggingIn
+                  }
                 />
               </View>
 
               <View
-                style={styles.inputBox}
+                style={
+                  styles.inputBox
+                }
               >
                 <Text
                   style={styles.label}
@@ -199,12 +283,14 @@ export default function Login() {
                     secureTextEntry={
                       !showPassword
                     }
+                    autoCapitalize="none"
+                    autoCorrect={false}
                     returnKeyType="done"
-                    onSubmitEditing={
-                      handleLogin
-                    }
                     editable={
                       !isLoggingIn
+                    }
+                    onSubmitEditing={
+                      handleLogin
                     }
                   />
 
@@ -242,8 +328,13 @@ export default function Login() {
                   isLoggingIn &&
                     styles.disabledButton,
                 ]}
-                disabled={isLoggingIn}
-                onPress={handleLogin}
+                activeOpacity={0.8}
+                disabled={
+                  isLoggingIn
+                }
+                onPress={
+                  handleLogin
+                }
               >
                 <Text
                   style={
@@ -251,46 +342,71 @@ export default function Login() {
                   }
                 >
                   {isLoggingIn
-                    ? "Logging in..."
+                    ? "Logging In..."
                     : "Login"}
                 </Text>
               </TouchableOpacity>
 
               <View
-                style={styles.bottomRow}
+                style={
+                  styles.loginLinksContainer
+                }
               >
-                <Text
+                <View
                   style={
-                    styles.bottomText
+                    styles.bottomRow
                   }
                 >
-                  Don't have an account?{" "}
-                </Text>
+                  <Text
+                    style={
+                      styles.bottomText
+                    }
+                  >
+                    Don't have an
+                    account?{" "}
+                  </Text>
+
+                  <TouchableOpacity
+                    disabled={
+                      isLoggingIn
+                    }
+                    onPress={() =>
+                      router.push(
+                        "/signup"
+                      )
+                    }
+                  >
+                    <Text
+                      style={
+                        styles.signupText
+                      }
+                    >
+                      Create one
+                    </Text>
+                  </TouchableOpacity>
+                </View>
 
                 <TouchableOpacity
+                  style={
+                    styles.forgotPasswordButton
+                  }
+                  disabled={
+                    isLoggingIn
+                  }
                   onPress={() =>
                     router.push(
-                      "/signup"
+                      "/forgot-password"
                     )
                   }
                 >
                   <Text
-                    style={styles.link}
+                    style={
+                      styles.forgotPasswordText
+                    }
                   >
-                    Create one
+                    Forgot Password?
                   </Text>
                 </TouchableOpacity>
-                
-                <TouchableOpacity 
-                style={styles.forgotPasswordButton}
-                onPress={() =>
-                  router.push("/forgot-password")
-                  }
-                  >
-                    <Text style={styles.forgotPasswordText}>
-                      Forgot Password?
-                      </Text>
-                  </TouchableOpacity>
               </View>
             </View>
           </ScrollView>
@@ -300,209 +416,249 @@ export default function Login() {
   );
 }
 
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: "#6e473b",
-  },
+const styles =
+  StyleSheet.create({
+    safeArea: {
+      flex: 1,
 
-  keyboardView: {
-    flex: 1,
-  },
+      backgroundColor:
+        "#6e473b",
+    },
 
-  container: {
-    flex: 1,
-    backgroundColor: "#6e473b",
-  },
+    keyboardView: {
+      flex: 1,
 
-  content: {
-    flexGrow: 1,
+      backgroundColor:
+        "#6e473b",
+    },
 
-    justifyContent: "center",
+    container: {
+      flex: 1,
 
-    paddingHorizontal: 25,
+      backgroundColor:
+        "#6e473b",
+    },
 
-    paddingTop: 25,
+    content: {
+      flexGrow: 1,
 
-    paddingBottom: 35,
-  },
+      paddingHorizontal: 25,
 
-  side: {
-    marginBottom: 30,
-  },
+      paddingTop: 35,
 
-  heading: {
-    fontSize: 36,
+      paddingBottom: 40,
 
-    fontWeight: "bold",
+      justifyContent: "center",
+    },
 
-    color: "#dac69b",
+    side: {
+      marginBottom: 30,
+    },
 
-    marginBottom: 10,
-  },
+    heading: {
+      fontSize: 34,
 
-  verse: {
-    fontSize: 18,
+      fontWeight: "bold",
 
-    color: "#ffffff",
+      color: "#dac69b",
 
-    lineHeight: 29,
-  },
+      marginBottom: 12,
+    },
 
-  reference: {
-    marginTop: 12,
+    verse: {
+      fontSize: 18,
 
-    color: "#F5E6C5",
+      color: "#ffffff",
 
-    fontWeight: "bold",
+      lineHeight: 28,
+    },
 
-    fontStyle: "italic",
+    reference: {
+      marginTop: 10,
 
-    fontSize: 17,
-  },
+      color: "#f5e6c5",
 
-  wrapper: {
-    backgroundColor:
-      "rgba(255,255,255,0.08)",
+      fontWeight: "bold",
 
-    padding: 24,
+      fontStyle: "italic",
 
-    borderRadius: 20,
-  },
+      fontSize: 16,
+    },
 
-  title: {
-    textAlign: "center",
+    wrapper: {
+      backgroundColor:
+        "rgba(255,255,255,0.08)",
 
-    fontSize: 34,
+      paddingHorizontal: 22,
 
-    color: "#e1d4c2",
+      paddingVertical: 26,
 
-    fontWeight: "bold",
+      borderRadius: 20,
+    },
 
-    marginBottom: 20,
-  },
+    title: {
+      textAlign: "center",
 
-  inputBox: {
-    marginBottom: 18,
-  },
+      fontSize: 32,
 
-  label: {
-    color: "#e1d4c2",
+      color: "#e1d4c2",
 
-    marginBottom: 8,
+      fontWeight: "bold",
 
-    fontSize: 16,
-  },
+      marginBottom: 22,
+    },
 
-  input: {
-    height: 50,
+    inputBox: {
+      marginBottom: 16,
+    },
 
-    borderRadius: 12,
+    label: {
+      color: "#e1d4c2",
 
-    backgroundColor:
-      "rgba(255,255,255,0.12)",
+      marginBottom: 7,
 
-    paddingHorizontal: 15,
+      fontSize: 15,
+    },
 
-    color: "#ffffff",
+    input: {
+      height: 50,
 
-    fontSize: 16,
-  },
+      borderRadius: 12,
 
-  passwordContainer: {
-    height: 50,
+      backgroundColor:
+        "rgba(255,255,255,0.12)",
 
-    borderRadius: 12,
+      paddingHorizontal: 15,
 
-    backgroundColor:
-      "rgba(255,255,255,0.12)",
+      color: "#ffffff",
 
-    flexDirection: "row",
+      fontSize: 16,
+    },
 
-    alignItems: "center",
-  },
+    passwordContainer: {
+      height: 50,
 
-  passwordInput: {
-    flex: 1,
+      borderRadius: 12,
 
-    height: "100%",
+      backgroundColor:
+        "rgba(255,255,255,0.12)",
 
-    paddingLeft: 15,
+      flexDirection: "row",
 
-    paddingRight: 5,
+      alignItems: "center",
+    },
 
-    color: "#ffffff",
+    passwordInput: {
+      flex: 1,
 
-    fontSize: 16,
-  },
+      height: "100%",
 
-  eyeButton: {
-    width: 50,
+      paddingLeft: 15,
 
-    height: 50,
+      paddingRight: 5,
 
-    justifyContent: "center",
+      color: "#ffffff",
 
-    alignItems: "center",
-  },
+      fontSize: 16,
+    },
 
-  button: {
-    backgroundColor: "#e1d4c2",
+    eyeButton: {
+      width: 48,
 
-    height: 50,
+      height: 50,
 
-    borderRadius: 12,
+      justifyContent:
+        "center",
 
-    justifyContent: "center",
+      alignItems: "center",
+    },
 
-    alignItems: "center",
+    button: {
+      backgroundColor:
+        "#e1d4c2",
 
-    marginTop: 10,
-  },
+      minHeight: 50,
 
-  disabledButton: {
-    opacity: 0.65,
-  },
+      justifyContent:
+        "center",
 
-  buttonText: {
-    color: "#6d5530",
+      alignItems: "center",
 
-    fontSize: 18,
+      borderRadius: 12,
 
-    fontWeight: "bold",
-  },
+      marginTop: 5,
 
-  bottomRow: {
-    flexDirection: "row",
+      paddingHorizontal: 10,
+    },
 
-    justifyContent: "center",
+    disabledButton: {
+      opacity: 0.65,
+    },
 
-    flexWrap: "wrap",
+    buttonText: {
+      color: "#6d5530",
 
-    marginTop: 25,
-  },
+      fontWeight: "bold",
 
-  bottomText: {
-    color: "#e1d4c2",
-  },
+      fontSize: 18,
+    },
 
-  link: {
-    color: "#e1d4c2",
+    loginLinksContainer: {
+      width: "100%",
 
-    fontWeight: "bold",
-  },
+      alignItems: "center",
 
-  forgotPasswordButton: {
-    alignSelf: "center",
-    marginTop: 16,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-},
+      marginTop: 20,
+    },
 
-forgotPasswordText: {
-  color: "#e1d4c2",
-  fontSize: 15,
-  fontWeight: "600",
-  textDecorationLine: "underline",
-},
-});
+    bottomRow: {
+      width: "100%",
+
+      flexDirection: "row",
+
+      justifyContent:
+        "center",
+
+      alignItems: "center",
+
+      flexWrap: "wrap",
+    },
+
+    bottomText: {
+      color: "#e1d4c2",
+
+      textAlign: "center",
+    },
+
+    signupText: {
+      color: "#e1d4c2",
+
+      fontWeight: "bold",
+    },
+
+    forgotPasswordButton: {
+      marginTop: 12,
+
+      paddingVertical: 8,
+
+      paddingHorizontal: 12,
+
+      alignItems: "center",
+
+      justifyContent:
+        "center",
+    },
+
+    forgotPasswordText: {
+      color: "#e1d4c2",
+
+      fontSize: 15,
+
+      fontWeight: "600",
+
+      textAlign: "center",
+
+      textDecorationLine:
+        "underline",
+    },
+  });
