@@ -295,6 +295,20 @@ export default function Profile() {
         </TouchableOpacity>
 
         <TouchableOpacity
+        style={styles.option}
+        onPress={() => router.push("/reports")
+        }
+        >
+          <Text style={styles.optionText}>
+            Activity Reports
+          </Text>
+
+          <Text style={styles.arrow}>
+            ›
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
           style={styles.option}
           onPress={() =>
             router.push("/delete-account")

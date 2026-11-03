@@ -1,11 +1,17 @@
-import { router } from "expo-router";
+import {
+  router,
+} from "expo-router";
+
 import {
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
-import { logout } from "../src/services/authService";
+
+import {
+  logout,
+} from "../src/services/authService";
 
 type MoreMenuProps = {
   visible: boolean;
@@ -20,63 +26,99 @@ export default function MoreMenu({
     return null;
   }
 
-  const handleLogout = async () => {
-    try {
-      await logout();
-      onClose();
-      router.replace("/login");
-    } catch (error){
-      console.log(error);
-    }
+  const handleLogout =
+    async () => {
+      try {
+        await logout();
+
+        onClose();
+
+        router.replace(
+          "/login"
+        );
+      } catch (error) {
+        console.log(
+          "Logout error:",
+          error
+        );
+      }
+    };
+
+  const openScreen = (
+    route:
+      | "/profile"
+      | "/highlights"
+      | "/verse-history"
+      | "/devotional-history"
+  ) => {
+    onClose();
+
+    router.push(route);
   };
 
   return (
-    <View style={styles.wrapper}>
-      <View style={styles.menu}>
+    <View
+      style={styles.wrapper}
+    >
+      <View
+        style={styles.menu}
+      >
         <TouchableOpacity
           style={styles.item}
-          onPress={() => {
-            onClose();
-            router.push("/profile");
-          }}
+          onPress={() =>
+            openScreen(
+              "/profile"
+            )
+          }
         >
-          <Text style={styles.text}>
+          <Text
+            style={styles.text}
+          >
             Profile
           </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
           style={styles.item}
-          onPress={() => {
-            onClose();
-            router.push("/highlights");
-          }}
+          onPress={() =>
+            openScreen(
+              "/highlights"
+            )
+          }
         >
-          <Text style={styles.text}>
+          <Text
+            style={styles.text}
+          >
             My Highlights
           </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
           style={styles.item}
-          onPress={() => {
-            onClose();
-            router.push("/verse-history");
-          }}
+          onPress={() =>
+            openScreen(
+              "/verse-history"
+            )
+          }
         >
-          <Text style={styles.text}>
+          <Text
+            style={styles.text}
+          >
             Verse History
           </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
           style={styles.item}
-          onPress={() => {
-            onClose();
-            router.push("/devotional-history");
-          }}
+          onPress={() =>
+            openScreen(
+              "/devotional-history"
+            )
+          }
         >
-          <Text style={styles.text}>
+          <Text
+            style={styles.text}
+          >
             Devotional History
           </Text>
         </TouchableOpacity>
@@ -86,9 +128,15 @@ export default function MoreMenu({
             styles.item,
             styles.logoutItem,
           ]}
-          onPress={handleLogout}
+          onPress={
+            handleLogout
+          }
         >
-          <Text style={styles.logoutText}>
+          <Text
+            style={
+              styles.logoutText
+            }
+          >
             LOG OUT
           </Text>
         </TouchableOpacity>
@@ -97,52 +145,74 @@ export default function MoreMenu({
   );
 }
 
-const styles = StyleSheet.create({
-  wrapper: {
-    position: "absolute",
-    bottom: 90,
-    right: 15,
-    zIndex: 100,
-  },
+const styles =
+  StyleSheet.create({
+    wrapper: {
+      position: "absolute",
 
-  menu: {
-    width: 220,
-    backgroundColor: "#f8f4ef",
-    borderWidth: 2,
-    borderColor: "#beb5a9",
-    borderRadius: 15,
-    overflow: "hidden",
+      bottom: 90,
 
-    shadowColor: "#291c0e",
-    shadowOffset: {
-      width: 0,
-      height: 5,
+      right: 15,
+
+      zIndex: 100,
     },
-    shadowOpacity: 0.15,
-    shadowRadius: 10,
 
-    elevation: 8,
-  },
+    menu: {
+      width: 220,
 
-  item: {
-    paddingVertical: 15,
-    paddingHorizontal: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: "#beb5a9",
-  },
+      backgroundColor:
+        "#f8f4ef",
 
-  text: {
-    color: "#291c0e",
-    fontSize: 16,
-  },
+      borderWidth: 2,
 
-  logoutItem: {
-    borderBottomWidth: 0,
-  },
+      borderColor:
+        "#beb5a9",
 
-  logoutText: {
-    color: "#c62828",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-});
+      borderRadius: 15,
+
+      overflow: "hidden",
+
+      shadowColor:
+        "#291c0e",
+
+      shadowOffset: {
+        width: 0,
+        height: 5,
+      },
+
+      shadowOpacity: 0.15,
+
+      shadowRadius: 10,
+
+      elevation: 8,
+    },
+
+    item: {
+      paddingVertical: 15,
+
+      paddingHorizontal: 20,
+
+      borderBottomWidth: 1,
+
+      borderBottomColor:
+        "#beb5a9",
+    },
+
+    text: {
+      color: "#291c0e",
+
+      fontSize: 16,
+    },
+
+    logoutItem: {
+      borderBottomWidth: 0,
+    },
+
+    logoutText: {
+      color: "#c62828",
+
+      fontSize: 16,
+
+      fontWeight: "bold",
+    },
+  });
